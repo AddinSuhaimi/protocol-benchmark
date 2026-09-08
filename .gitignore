@@ -1,0 +1,13 @@
+# Binary perf data & trace logs
+*.data
+*.data.old
+*.folded
+
+# Go binaries & OS generated files
+/app/
+*.exe
+*.out
+*.test
+
+# Environment files
+.env
