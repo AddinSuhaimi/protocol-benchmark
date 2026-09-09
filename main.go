@@ -13,13 +13,14 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/apache/thrift/lib/go/thrift"
 	flatbuffers "github.com/google/flatbuffers/go"
 	"github.com/vmihailenco/msgpack/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	// Replace "protocol-benchmark/pb" with your module name defined in go.mod
 	pb "protocol-benchmark/pb"
+	thrift_order "protocol-benchmark/gen-go/order"
 )
 
 // Standard Data Schema across all 5 protocols
@@ -109,22 +110,37 @@ func runWorker() {
 
 	case "ns-thrift", "thrift":
 		lis, err := net.Listen("tcp", ":9090")
-		if err != nil {
-			log.Fatalf("Failed to listen: %v", err)
-		}
-		for {
+    		if err != nil {
+        		log.Fatalf("Failed to listen: %v", err)
+    		}
+    		for {
 			conn, err := lis.Accept()
-			if err != nil {
-				continue
-			}
+        		if err != nil {
+            			continue
+        		}
 			go func(c net.Conn) {
-				defer c.Close()
-				var length int32
-				_ = binary.Read(c, binary.BigEndian, &length)
-				buf := make([]byte, length)
-				_, _ = io.ReadFull(c, buf)
+            			defer c.Close()
+            
+            			// Read length header
+            			var length int32
+            			if err := binary.Read(c, binary.BigEndian, &length); err != nil {
+                			return
+            			}
+            			buf := make([]byte, length)
+            			if _, err := io.ReadFull(c, buf); err != nil {
+                			return
+            			}
+
+            			// Perform actual Thrift deserialization
+            			transport := thrift.NewTMemoryBufferLen(int(length))
+            			transport.Write(buf)
+            			protocol := thrift.NewTBinaryProtocolConf(transport, nil)
+            
+            			// Unmarshal bytes into payload
+            			var payload thrift_order.OrderPayload
+            			_ = payload.Read(context.Background(), protocol)
 			}(conn)
-		}
+    		}
 
 	case "ns-flatbuffers", "flatbuffers":
 		http.HandleFunc("/process", func(w http.ResponseWriter, r *http.Request) {
