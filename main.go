@@ -18,6 +18,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
 
 	pb "protocol-benchmark/pb"
 	thrift_order "protocol-benchmark/gen-go/order"
@@ -155,92 +156,121 @@ func runWorker() {
 	}
 }
 
-// -------------------------------------------------------------------
-// GATEWAY SERVICE
-// -------------------------------------------------------------------
-func runGateway() {
-	protocol := os.Getenv("PROTOCOL")
-	workerHost := os.Getenv("WORKER_HOST")
-	log.Printf("Starting Gateway Service targeting %s via %s", workerHost, protocol)
+// -------------------------------------------------------------------                                                                                                       
+// GATEWAY SERVICE                                                                                                                                                           
+// -------------------------------------------------------------------                                                                                                       
+func runGateway() {                                                                                                                                                          
+	protocol := os.Getenv("PROTOCOL")                                                                                                                                    
+	workerHost := os.Getenv("WORKER_HOST")                                                                                                                               
+	log.Printf("Starting Gateway Service targeting %s via %s", workerHost, protocol)                                                                                     
 
-	// Pre-establish gRPC client connection if using ns-grpc
-	var grpcClient pb.OrderServiceClient
-	if protocol == "ns-grpc" || protocol == "grpc" {
-		conn, err := grpc.Dial(
-			fmt.Sprintf("%s:50051", workerHost),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
-		if err != nil {
-			log.Fatalf("Failed to connect to gRPC worker: %v", err)
-		}
-		defer conn.Close()
-		grpcClient = pb.NewOrderServiceClient(conn)
-	}
+	// Pre-establish gRPC client connection if using ns-grpc                                                                                                             
+	var grpcClient pb.OrderServiceClient                                                                                                                                 
+	if protocol == "ns-grpc" || protocol == "grpc" {                                                                                                                     
+		conn, err := grpc.Dial(                                                                                                                                      
+			fmt.Sprintf("%s:50051", workerHost),                                                                                                                 
+			grpc.WithTransportCredentials(insecure.NewCredentials()),                                                                                            
+		)                                                                                                                                                            
+		if err != nil {                                                                                                                                              
+			log.Fatalf("Failed to connect to gRPC worker: %v", err)                                                                                              
+		}                                                                                                                                                            
+		defer conn.Close()                                                                                                                                           
+		grpcClient = pb.NewOrderServiceClient(conn)                                                                                                                  
+	}                                                                                                                                                                    
+	http.HandleFunc("/checkout", func(w http.ResponseWriter, r *http.Request) {                                                                                          
 
-	http.HandleFunc("/checkout", func(w http.ResponseWriter, r *http.Request) {
-		dummyData := generateDummyPayload()
+		dummyData := generateDummyPayload()                                                                                                                          
+		var payloadBytes int                                                                                                                                         
 
-		switch protocol {
-		case "ns-json", "json":
-			body, _ := json.Marshal(dummyData)
-			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/json", bytes.NewBuffer(body))
-			if err == nil {
-				resp.Body.Close()
-			}
+		switch protocol {                                                                                                                                            
+		case "ns-json", "json":                                                                                                                                      
+			body, _ := json.Marshal(dummyData)                                                                                                                   
+			payloadBytes = len(body)                                                                                                                             
+			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/json", bytes.NewBuffer(body))                                 
+			if err == nil {                                                                                                                                      
+				resp.Body.Close()                                                                                                                            
+			}                                                                                                                                                    
 
-		case "ns-msgpack", "msgpack":
-			body, _ := msgpack.Marshal(dummyData)
-			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/x-msgpack", bytes.NewBuffer(body))
-			if err == nil {
-				resp.Body.Close()
-			}
+		case "ns-msgpack", "msgpack":                                                                                                                                
+			body, _ := msgpack.Marshal(dummyData)                                                                                                                
+			payloadBytes = len(body)                                                                                                                             
+			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/x-msgpack", bytes.NewBuffer(body))                            
+			if err == nil {                                                                                                                                      
+				resp.Body.Close()                                                                                                                            
+			}                                                                                                                                                    
 
-		case "ns-grpc", "grpc":
-			// Convert native OrderPayload to generated Protobuf message
-			pbItems := make([]*pb.OrderItem, len(dummyData.Items))
-			for i, item := range dummyData.Items {
-				pbItems[i] = &pb.OrderItem{
-					ItemId:   item.ItemID,
-					Quantity: item.Quantity,
-					Price:    item.Price,
-				}
-			}
-			pbPayload := &pb.OrderPayload{
-				OrderId:     dummyData.OrderID,
-				UserId:      dummyData.UserID,
-				Items:       pbItems,
-				TotalAmount: dummyData.TotalAmount,
-			}
+		case "ns-grpc", "grpc":                                                                                                                                      
+			pbItems := make([]*pb.OrderItem, len(dummyData.Items))                                                                                               
+			for i, item := range dummyData.Items {                                                                                                               
+				pbItems[i] = &pb.OrderItem{                                                                                                                  
+					ItemId:   item.ItemID,                                                                                                               
+					Quantity: item.Quantity,                                                                                                             
+					Price:    item.Price,                                                                                                                
+				}                                                                                                                                                    
+			}                                                                                                                                                    
+			pbPayload := &pb.OrderPayload{                                                                                                                       
+				OrderId:     dummyData.OrderID,                                                                                                              
+				UserId:      dummyData.UserID,                                                                                                               
+				Items:       pbItems,                                                                                                                        
+				TotalAmount: dummyData.TotalAmount,                                                                                                          
+			}                                                                                                                                                    
 
-			// Invoke gRPC RPC method over HTTP/2
-			_, _ = grpcClient.ProcessOrder(r.Context(), pbPayload)
+			// Calculate exact serialized Protobuf wire byte size
+			payloadBytes = proto.Size(pbPayload)                                                                                                                 
 
-		case "ns-thrift", "thrift":
-			body, _ := msgpack.Marshal(dummyData)
-			conn, err := net.Dial("tcp", fmt.Sprintf("%s:9090", workerHost))
-			if err == nil {
-				_ = binary.Write(conn, binary.BigEndian, int32(len(body)))
-				_, _ = conn.Write(body)
-				conn.Close()
-			}
+			_, _ = grpcClient.ProcessOrder(r.Context(), pbPayload)                                                                                               
 
-		case "ns-flatbuffers", "flatbuffers":
-			builder := flatbuffers.NewBuilder(1024)
-			orderOffset := builder.CreateString(dummyData.OrderID)
-			builder.Finish(orderOffset)
-			buf := builder.FinishedBytes()
+		case "ns-thrift", "thrift":                                                                                                                                  
+			items := make([]*thrift_order.OrderItem, len(dummyData.Items))                                                                                       
+			for i, item := range dummyData.Items {                                                                                                               
+				items[i] = &thrift_order.OrderItem{                                                                                                          
+					ItemID:   item.ItemID,                                                                                                               
+					Quantity: item.Quantity,                                                                                                             
+					Price:    item.Price,                                                                                                                
+				}                                                                                                                                                    
+			}                                                                                                                                                    
+			thriftPayload := &thrift_order.OrderPayload{                                                                                                         
+				OrderID:     dummyData.OrderID,                                                                                                              
+				UserID:      dummyData.UserID,                                                                                                               
+				Items:       items,                                                                                                                          
+				TotalAmount: dummyData.TotalAmount,                                                                                                          
+			}                                                                                                                                                    
 
-			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/octet-stream", bytes.NewBuffer(buf))
-			if err == nil {
-				resp.Body.Close()
-			}
-		}
+			transport := thrift.NewTMemoryBuffer()                                                                                                               
+			prot := thrift.NewTBinaryProtocolConf(transport, nil)                                                                                            
+			if err := thriftPayload.Write(context.Background(), prot); err == nil {                                                                          
+				body := transport.Bytes()                                                                                                                    
+				payloadBytes = len(body)                                                                                                                     
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("OK"))
-	})
+				conn, err := net.Dial("tcp", fmt.Sprintf("%s:9090", workerHost))                                                                             
+				if err == nil {                                                                                                                              
+					_ = binary.Write(conn, binary.BigEndian, int32(len(body)))                                                                           
+					_, _ = conn.Write(body)                                                                                                              
+					conn.Close()                                                                                                                         
+				}                                                                                                                                            
+			}                                                                                                                                                    
 
-	log.Fatal(http.ListenAndServe(":80", nil))
+		case "ns-flatbuffers", "flatbuffers":                                                                                                                        
+			builder := flatbuffers.NewBuilder(1024)                                                                                                              
+			orderOffset := builder.CreateString(dummyData.OrderID)                                                                                               
+			builder.Finish(orderOffset)                                                                                                                          
+			buf := builder.FinishedBytes()                                                                                                                       
+			payloadBytes = len(buf)                                                                                                                              
+
+			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/octet-stream", bytes.NewBuffer(buf))                          
+			if err == nil {                                                                                                                                      
+				resp.Body.Close()                                                                                                                            
+			}                                                                                                                                                    
+		}                                                                                                                                                            
+
+		// Log exact wire payload size for bash script log extraction
+		log.Printf("BENCHMARK_PAYLOAD_BYTES: %d", payloadBytes)                                                                                              
+
+		w.WriteHeader(http.StatusOK)                                                                                                                                 
+		_, _ = w.Write([]byte("OK"))                                                                                                                                 
+	})                                                                                                                                                                   
+
+	log.Fatal(http.ListenAndServe(":80", nil))                                                                                                                           
 }
 
 func main() {
