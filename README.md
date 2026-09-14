@@ -225,4 +225,4 @@ $$\mathcal{R}_{\text{parse}} = \left( \frac{\text{Filtered Protocol Deserializat
 
 ```
 
-This experimental procedure captures micro-level CPU behavior (IPC, $\mathcal{R}_{\text{parse}}$) and macro-level host impact ($\Delta E$, Req/J, MB/J) across all candidate protocols, supplying the analytical rigor required to justify the Protocol Multiplier ($\mathcal{M}_{\text{protocol}}$) metric.
+This experimental procedure captures micro-level CPU behavior (IPC, $\mathcal{R}{\text{parse}}$) and macro-level host impact ($\Delta E$, Req/J, MB/J) across all candidate protocols, supplying the analytical rigor required to justify the Protocol Multiplier ($\mathcal{M}_{\text{protocol}}$) metric.
