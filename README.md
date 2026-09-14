@@ -1,8 +1,3 @@
-
-# Project Title
-
-A brief description of what this project does and who it's for
-
 ## 1. Experimental Purpose
 
 The primary objective of this experimental framework is to empirically quantify the computational tax, microarchitectural efficiency, network throughput, and energy consumption of Layer 7 (L7) serialization protocols in cloud-native microservices.
