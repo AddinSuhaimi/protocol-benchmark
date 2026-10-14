@@ -145,10 +145,12 @@ func runWorker() {
 
 	case "ns-flatbuffers", "flatbuffers":
 		http.HandleFunc("/process", func(w http.ResponseWriter, r *http.Request) {
-			body, _ := io.ReadAll(r.Body)
-			if len(body) >= 4 {
-				// Zero-Copy access: Reading offset directly without object allocation
-				_ = flatbuffers.GetUOffsetT(body)
+			body, err := io.ReadAll(r.Body)
+			if err == nil && len(body) >= 4 {
+				// Zero-Copy access: Access root table and read fields without object allocation
+				payload := fb_order.GetRootAsOrderPayload(body, 0)
+				_ = payload.OrderId()
+				_ = payload.ItemsLength()
 			}
 			w.WriteHeader(http.StatusOK)
 		})
@@ -250,17 +252,49 @@ func runGateway() {
 				}                                                                                                                                            
 			}                                                                                                                                                    
 
-		case "ns-flatbuffers", "flatbuffers":                                                                                                                        
-			builder := flatbuffers.NewBuilder(1024)                                                                                                              
-			orderOffset := builder.CreateString(dummyData.OrderID)                                                                                               
-			builder.Finish(orderOffset)                                                                                                                          
-			buf := builder.FinishedBytes()                                                                                                                       
-			payloadBytes = len(buf)                                                                                                                              
+		case "ns-flatbuffers", "flatbuffers":
+			builder := flatbuffers.NewBuilder(1024)
 
-			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/octet-stream", bytes.NewBuffer(buf))                          
-			if err == nil {                                                                                                                                      
-				resp.Body.Close()                                                                                                                            
-			}                                                                                                                                                    
+			// 1. Serialize OrderItem elements (Bottom-Up construction)
+			itemOffsets := make([]flatbuffers.UOffsetT, len(dummyData.Items))
+			for i, item := range dummyData.Items {
+				itemIDOffset := builder.CreateString(item.ItemID)
+
+				fb_order.OrderItemStart(builder)
+				fb_order.OrderItemAddItemId(builder, itemIDOffset)
+				fb_order.OrderItemAddQuantity(builder, item.Quantity)
+				fb_order.OrderItemAddPrice(builder, item.Price)
+				itemOffsets[i] = fb_order.OrderItemEnd(builder)
+			}
+
+			// 2. Build the Items vector
+			fb_order.OrderPayloadStartItemsVector(builder, len(itemOffsets))
+			for i := len(itemOffsets) - 1; i >= 0; i-- {
+				builder.PrependUOffsetT(itemOffsets[i])
+			}
+			itemsVec := builder.EndVector(len(itemOffsets))
+
+			// 3. Serialize root OrderPayload scalar/string fields
+			orderIDOffset := builder.CreateString(dummyData.OrderID)
+			userIDOffset := builder.CreateString(dummyData.UserID)
+
+			// 4. Build root OrderPayload table
+			fb_order.OrderPayloadStart(builder)
+			fb_order.OrderPayloadAddOrderId(builder, orderIDOffset)
+			fb_order.OrderPayloadAddUserId(builder, userIDOffset)
+			fb_order.OrderPayloadAddItems(builder, itemsVec)
+			fb_order.OrderPayloadAddTotalAmount(builder, dummyData.TotalAmount)
+			payloadOffset := fb_order.OrderPayloadEnd(builder)
+
+			// 5. Finish buffer and record true dynamic length
+			builder.Finish(payloadOffset)
+			buf := builder.FinishedBytes()
+			payloadBytes = len(buf)
+
+			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/octet-stream", bytes.NewBuffer(buf))
+			if err == nil {
+				resp.Body.Close()
+			}                                                                                                                                                   
 		}                                                                                                                                                            
 
 		// Log exact wire payload size for bash script log extraction
