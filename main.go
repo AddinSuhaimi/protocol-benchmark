@@ -22,6 +22,7 @@ import (
 
 	pb "protocol-benchmark/pb"
 	thrift_order "protocol-benchmark/gen-go/order"
+        fb_order "protocol-benchmark/order"
 )
 
 // Standard Data Schema across all 5 protocols

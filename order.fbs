@@ -1,0 +1,16 @@
+namespace order;
+
+table OrderItem {
+  item_id: string;
+  quantity: int32;
+  price: float64;
+}
+
+table OrderPayload {
+  order_id: string;
+  user_id: string;
+  items: [OrderItem];
+  total_amount: float64;
+}
+
+root_type OrderPayload;
