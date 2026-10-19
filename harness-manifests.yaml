@@ -1,114 +1,690 @@
+# Corrected PSI harness: apply ONCE with kubectl apply -f harness-manifests.yaml
+# Explicit namespaces: do not apply this file in a loop with -n.
+# Defaults: PAYLOAD_SIZE=10; CPU request=250m; no CPU or memory limits.
+# No limits means uncapped only if admission policies and parent cgroups impose none.
+# Set 500m limits on BOTH application Deployments for capped conditions.
+# Set PAYLOAD_SIZE=50 on Gateway Deployments for large-payload conditions.
+# Save effective Pod resources, imageID, placement and cgroup settings per run.
+# Reapplying this file resets payload/resources to the defaults managed here.
+# Import protocol-harness:v3.0 into k3d before applying (imagePullPolicy: Never).
+# Stop experiments during deployment; wait for ALL rollouts, then validate checkout.
+# TCP readiness checks listening only; it does not establish downstream correctness.
+# Probe traffic is measurement overhead; keep its settings fixed and document it.
+# Run one implementation's load at a time; other deployments remain idle.
+# Existing ns-thrift resources are NOT deleted by applying this file.
+# Node labels describe logical placement, not physical-host isolation.
+# Locust 2.31.8 is an explicit reproducibility pin, not a claim of latest version.
+# No liveness probes: avoid automatic benchmark restarts on transient load spikes.
 ---
-# Worker Service
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-json
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: worker-service
+  namespace: ns-json
+  labels: &id001
+    app: worker-service
+    benchmark.protocol: json
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: worker-service
   template:
     metadata:
-      labels:
-        app: worker-service
+      labels: *id001
     spec:
       nodeSelector:
         role: benchmark-node
       containers:
       - name: worker
-        image: protocol-harness:v2.0
+        image: protocol-harness:v3.0
         imagePullPolicy: Never
         env:
         - name: SERVICE_ROLE
-          value: "worker"
+          value: worker
         - name: PROTOCOL
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
+          value: json
         ports:
-        - containerPort: 8080
-        - containerPort: 50051
-        - containerPort: 9090
+        - name: service
+          containerPort: 8080
+        resources:
+          requests:
+            cpu: 250m
+        startupProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 2
+          timeoutSeconds: 1
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: worker-service
+  namespace: ns-json
 spec:
   selector:
     app: worker-service
   ports:
   - name: http
     port: 8080
-  - name: grpc
-    port: 50051
-  - name: thrift
-    port: 9090
+    targetPort: service
+    protocol: TCP
 ---
-# Gateway Service
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gateway-service
+  namespace: ns-json
+  labels: &id001
+    app: gateway-service
+    benchmark.protocol: json
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: gateway-service
   template:
     metadata:
-      labels:
-        app: gateway-service
+      labels: *id001
     spec:
       nodeSelector:
         role: benchmark-node
       containers:
       - name: gateway
-        image: protocol-harness:v2.0
+        image: protocol-harness:v3.0
         imagePullPolicy: Never
         env:
         - name: SERVICE_ROLE
-          value: "gateway"
-        - name: WORKER_HOST
-          value: "worker-service"
+          value: gateway
         - name: PROTOCOL
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
+          value: json
+        - name: WORKER_HOST
+          value: worker-service
+        - name: PAYLOAD_SIZE
+          value: '10'
         ports:
-        - containerPort: 80
+        - name: service
+          containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+        startupProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 2
+          timeoutSeconds: 1
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: gateway-service
+  namespace: ns-json
 spec:
   selector:
     app: gateway-service
   ports:
   - name: http
     port: 80
+    targetPort: service
+    protocol: TCP
 ---
-# Locust Load Generator Pod
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: loadgenerator
+  namespace: ns-json
+  labels: &id001
+    app: loadgenerator
+    benchmark.protocol: json
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: loadgenerator
   template:
     metadata:
-      labels:
-        app: loadgenerator
+      labels: *id001
     spec:
       nodeSelector:
         role: loadgen-node
       containers:
       - name: main
-        image: locustio/locust
-        command: ["/bin/sh", "-c", "sleep infinity"]
+        image: locustio/locust:2.31.8
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - sleep infinity
+        resources:
+          requests:
+            cpu: 250m
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-msgpack
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-service
+  namespace: ns-msgpack
+  labels: &id001
+    app: worker-service
+    benchmark.protocol: msgpack
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: worker-service
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      nodeSelector:
+        role: benchmark-node
+      containers:
+      - name: worker
+        image: protocol-harness:v3.0
+        imagePullPolicy: Never
+        env:
+        - name: SERVICE_ROLE
+          value: worker
+        - name: PROTOCOL
+          value: msgpack
+        ports:
+        - name: service
+          containerPort: 8080
+        resources:
+          requests:
+            cpu: 250m
+        startupProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 2
+          timeoutSeconds: 1
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker-service
+  namespace: ns-msgpack
+spec:
+  selector:
+    app: worker-service
+  ports:
+  - name: http
+    port: 8080
+    targetPort: service
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  namespace: ns-msgpack
+  labels: &id001
+    app: gateway-service
+    benchmark.protocol: msgpack
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      nodeSelector:
+        role: benchmark-node
+      containers:
+      - name: gateway
+        image: protocol-harness:v3.0
+        imagePullPolicy: Never
+        env:
+        - name: SERVICE_ROLE
+          value: gateway
+        - name: PROTOCOL
+          value: msgpack
+        - name: WORKER_HOST
+          value: worker-service
+        - name: PAYLOAD_SIZE
+          value: '10'
+        ports:
+        - name: service
+          containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+        startupProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 2
+          timeoutSeconds: 1
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: ns-msgpack
+spec:
+  selector:
+    app: gateway-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: service
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgenerator
+  namespace: ns-msgpack
+  labels: &id001
+    app: loadgenerator
+    benchmark.protocol: msgpack
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: loadgenerator
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      nodeSelector:
+        role: loadgen-node
+      containers:
+      - name: main
+        image: locustio/locust:2.31.8
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - sleep infinity
+        resources:
+          requests:
+            cpu: 250m
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-grpc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-service
+  namespace: ns-grpc
+  labels: &id001
+    app: worker-service
+    benchmark.protocol: grpc
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: worker-service
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      nodeSelector:
+        role: benchmark-node
+      containers:
+      - name: worker
+        image: protocol-harness:v3.0
+        imagePullPolicy: Never
+        env:
+        - name: SERVICE_ROLE
+          value: worker
+        - name: PROTOCOL
+          value: grpc
+        ports:
+        - name: service
+          containerPort: 50051
+        resources:
+          requests:
+            cpu: 250m
+        startupProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 2
+          timeoutSeconds: 1
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker-service
+  namespace: ns-grpc
+spec:
+  selector:
+    app: worker-service
+  ports:
+  - name: grpc
+    port: 50051
+    targetPort: service
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  namespace: ns-grpc
+  labels: &id001
+    app: gateway-service
+    benchmark.protocol: grpc
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      nodeSelector:
+        role: benchmark-node
+      containers:
+      - name: gateway
+        image: protocol-harness:v3.0
+        imagePullPolicy: Never
+        env:
+        - name: SERVICE_ROLE
+          value: gateway
+        - name: PROTOCOL
+          value: grpc
+        - name: WORKER_HOST
+          value: worker-service
+        - name: PAYLOAD_SIZE
+          value: '10'
+        ports:
+        - name: service
+          containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+        startupProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 2
+          timeoutSeconds: 1
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: ns-grpc
+spec:
+  selector:
+    app: gateway-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: service
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgenerator
+  namespace: ns-grpc
+  labels: &id001
+    app: loadgenerator
+    benchmark.protocol: grpc
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: loadgenerator
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      nodeSelector:
+        role: loadgen-node
+      containers:
+      - name: main
+        image: locustio/locust:2.31.8
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - sleep infinity
+        resources:
+          requests:
+            cpu: 250m
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-flatbuffers
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-service
+  namespace: ns-flatbuffers
+  labels: &id001
+    app: worker-service
+    benchmark.protocol: flatbuffers
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: worker-service
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      nodeSelector:
+        role: benchmark-node
+      containers:
+      - name: worker
+        image: protocol-harness:v3.0
+        imagePullPolicy: Never
+        env:
+        - name: SERVICE_ROLE
+          value: worker
+        - name: PROTOCOL
+          value: flatbuffers
+        ports:
+        - name: service
+          containerPort: 8080
+        resources:
+          requests:
+            cpu: 250m
+        startupProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 2
+          timeoutSeconds: 1
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker-service
+  namespace: ns-flatbuffers
+spec:
+  selector:
+    app: worker-service
+  ports:
+  - name: http
+    port: 8080
+    targetPort: service
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  namespace: ns-flatbuffers
+  labels: &id001
+    app: gateway-service
+    benchmark.protocol: flatbuffers
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      nodeSelector:
+        role: benchmark-node
+      containers:
+      - name: gateway
+        image: protocol-harness:v3.0
+        imagePullPolicy: Never
+        env:
+        - name: SERVICE_ROLE
+          value: gateway
+        - name: PROTOCOL
+          value: flatbuffers
+        - name: WORKER_HOST
+          value: worker-service
+        - name: PAYLOAD_SIZE
+          value: '10'
+        ports:
+        - name: service
+          containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+        startupProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 2
+          timeoutSeconds: 1
+          failureThreshold: 60
+        readinessProbe:
+          tcpSocket:
+            port: service
+          periodSeconds: 30
+          timeoutSeconds: 1
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: ns-flatbuffers
+spec:
+  selector:
+    app: gateway-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: service
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgenerator
+  namespace: ns-flatbuffers
+  labels: &id001
+    app: loadgenerator
+    benchmark.protocol: flatbuffers
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: loadgenerator
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      nodeSelector:
+        role: loadgen-node
+      containers:
+      - name: main
+        image: locustio/locust:2.31.8
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - sleep infinity
+        resources:
+          requests:
+            cpu: 250m
+
