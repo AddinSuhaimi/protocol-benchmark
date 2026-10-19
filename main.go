@@ -1,3 +1,4 @@
+// Revised benchmark: a success means the Worker completed and returned the expected result.
 package main
 
 import (
@@ -5,27 +6,33 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"log"
-	"net"
-	"net/http"
-	"os"
-	"strconv"
+ 	"hash/fnv"
+ 	"io"
+ 	"log"
+ 	"math"
+ 	"net"
+ 	"net/http"
+ 	"os"
+ 	"strconv"
+ 	"strings"
+ 	"time"
 
-	"github.com/apache/thrift/lib/go/thrift"
-	flatbuffers "github.com/google/flatbuffers/go"
-	"github.com/vmihailenco/msgpack/v5"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/proto"
-
-	pb "protocol-benchmark/pb"
-	thrift_order "protocol-benchmark/gen-go/order"
-        fb_order "protocol-benchmark/order"
+ 	flatbuffers "github.com/google/flatbuffers/go"
+ 	"github.com/vmihailenco/msgpack/v5"
+ 	"google.golang.org/grpc"
+ 	"google.golang.org/grpc/codes"
+ 	"google.golang.org/grpc/credentials/insecure"
+ 	"google.golang.org/grpc/status"
+ 	pb "protocol-benchmark/pb"
+ 	fb_order "protocol-benchmark/order"
 )
 
-// Standard Data Schema across all 5 protocols
+const maxBody = 16 << 20
+const maxItems = 10000
+const callTimeout = 10 * time.Second
+
 type OrderItem struct {
 	ItemID   string  `json:"item_id" msgpack:"item_id"`
 	Quantity int32   `json:"quantity" msgpack:"quantity"`
@@ -39,221 +46,98 @@ type OrderPayload struct {
 	TotalAmount float64     `json:"total_amount" msgpack:"total_amount"`
 }
 
-func generateDummyPayload() OrderPayload {
-	count := 10 // Default to v1.0 (10 items)
-	if val := os.Getenv("PAYLOAD_SIZE"); val != "" {
-		if parsed, err := strconv.Atoi(val); err == nil {
-			count = parsed
-		}
-	}
 
-	items := make([]OrderItem, count)
-	for i := 0; i < count; i++ {
-		items[i] = OrderItem{
-			ItemID:   fmt.Sprintf("item-%d", i),
-			Quantity: int32(i + 1),
-			Price:    19.99 * float64(i+1),
-		}
-	}
-	return OrderPayload{
-		OrderID:     "ord-123456789",
-		UserID:      "usr-987654321",
-		Items:       items,
-		TotalAmount: 1099.45,
-	}
+// All representations expose the same logical fields to the same operation.
+// FlatBuffers stays a view over the buffer; no object tree is reconstructed.
+type orderView interface {
+ 	orderID() string
+ 	userID() string
+ 	total() float64
+ 	count() int
+ 	item(int) (string, int32, float64, error)
+}
+type nativeView struct { p *OrderPayload }
+func (v nativeView) orderID() string { return v.p.OrderID }
+func (v nativeView) userID() string { return v.p.UserID }
+func (v nativeView) total() float64 { return v.p.TotalAmount }
+func (v nativeView) count() int { return len(v.p.Items) }
+func (v nativeView) item(i int) (string,int32,float64,error) {
+ 	x := v.p.Items[i]; return x.ItemID,x.Quantity,x.Price,nil
+}
+type protoView struct { p *pb.OrderPayload }
+func (v protoView) orderID() string { return v.p.GetOrderId() }
+func (v protoView) userID() string { return v.p.GetUserId() }
+func (v protoView) total() float64 { return v.p.GetTotalAmount() }
+func (v protoView) count() int { return len(v.p.GetItems()) }
+func (v protoView) item(i int) (string,int32,float64,error) {
+ 	x := v.p.Items[i]; if x == nil { return "",0,0,errors.New("nil item") }
+ 	return x.GetItemId(),x.GetQuantity(),x.GetPrice(),nil
+}
+type flatView struct { p *fb_order.OrderPayload }
+func (v flatView) orderID() string { return string(v.p.OrderId()) }
+func (v flatView) userID() string { return string(v.p.UserId()) }
+func (v flatView) total() float64 { return v.p.TotalAmount() }
+func (v flatView) count() int { return v.p.ItemsLength() }
+func (v flatView) item(i int) (string,int32,float64,error) {
+ 	var x fb_order.OrderItem
+ 	if !v.p.Items(&x,i) { return "",0,0,errors.New("missing item") }
+ 	return string(x.ItemId()),x.Quantity(),x.Price(),nil
 }
 
-// -------------------------------------------------------------------
-// gRPC SERVICE IMPLEMENTATION
-// -------------------------------------------------------------------
-type grpcOrderServer struct {
-	pb.UnimplementedOrderServiceServer
+// Canonical FNV-1a input: length-prefixed UTF-8 strings; little-endian
+// uint64 item count, IEEE-754 float64 bits, and uint32 quantity bits.
+// This is a deterministic workload/result check, not a cryptographic proof.
+func processOrder(ctx context.Context, v orderView) (token string, err error) {
+ 	// Generated FlatBuffers accessors may panic on malformed offsets.
+ 	// This boundary rejects those inputs instead of returning false success.
+ 	defer func() { if recover() != nil { token=""; err=errors.New("invalid order buffer") } }()
+ 	h := fnv.New64a()
+ 	var b [8]byte
+ 	put64 := func(x uint64) { binary.LittleEndian.PutUint64(b[:],x); _,_ = h.Write(b[:]) }
+ 	putString := func(s string) { put64(uint64(len(s))); _,_ = h.Write([]byte(s)) }
+ 	id,user,total,n := v.orderID(),v.userID(),v.total(),v.count()
+ 	if id=="" || user=="" || n<1 || n>maxItems || !finite(total) || total<0 {
+  		return "",errors.New("invalid order fields")
+ 	}
+ 	putString(id); putString(user); put64(uint64(n)); put64(math.Float64bits(total))
+ 	for i:=0;i<n;i++ {
+  		if err:=ctx.Err(); err!=nil { return "",err }
+  		id,q,p,err:=v.item(i)
+  		if err!=nil { return "",err }
+  		if id=="" || q<=0 || !finite(p) || p<0 { return "",errors.New("invalid item fields") }
+  		putString(id)
+  		binary.LittleEndian.PutUint32(b[:4],uint32(q)); _,_ = h.Write(b[:4])
+  		put64(math.Float64bits(p))
+ 	}
+ 	return fmt.Sprintf("OK:%d:%016x",n,h.Sum64()),nil
 }
 
-func (s *grpcOrderServer) ProcessOrder(ctx context.Context, req *pb.OrderPayload) (*pb.OrderResponse, error) {
-	// req is automatically unmarshaled from Protobuf wire format by gRPC runtime
-	return &pb.OrderResponse{Status: "OK"}, nil
+func finite(x float64) bool { return !math.IsNaN(x) && !math.IsInf(x,0) }
+
+func generatePayload(n int) OrderPayload {
+ 	p:=OrderPayload{OrderID:"ord-123456789",UserID:"usr-987654321",Items:make([]OrderItem,n)}
+ 	for i:=range p.Items {
+  		q:=int32(i+1); price:=19.99*float64(i+1)
+  		p.Items[i]=OrderItem{ItemID:fmt.Sprintf("item-%d",i),Quantity:q,Price:price}
+  		p.TotalAmount+=float64(q)*price
+ 	}
+ 	return p
 }
 
-// -------------------------------------------------------------------
-// WORKER SERVICE
-// -------------------------------------------------------------------
-func runWorker() {
-	protocol := os.Getenv("PROTOCOL")
-	log.Printf("Starting Worker Service for protocol: %s", protocol)
-
-	switch protocol {
-	case "ns-json", "json":
-		http.HandleFunc("/process", func(w http.ResponseWriter, r *http.Request) {
-			var payload OrderPayload
-			_ = json.NewDecoder(r.Body).Decode(&payload)
-			w.WriteHeader(http.StatusOK)
-		})
-		log.Fatal(http.ListenAndServe(":8080", nil))
-
-	case "ns-msgpack", "msgpack":
-		http.HandleFunc("/process", func(w http.ResponseWriter, r *http.Request) {
-			var payload OrderPayload
-			body, _ := io.ReadAll(r.Body)
-			_ = msgpack.Unmarshal(body, &payload)
-			w.WriteHeader(http.StatusOK)
-		})
-		log.Fatal(http.ListenAndServe(":8080", nil))
-
-	case "ns-grpc", "grpc":
-		lis, err := net.Listen("tcp", ":50051")
-		if err != nil {
-			log.Fatalf("Failed to listen: %v", err)
-		}
-		s := grpc.NewServer()
-		pb.RegisterOrderServiceServer(s, &grpcOrderServer{})
-		log.Printf("gRPC Worker listening on :50051")
-		log.Fatal(s.Serve(lis))
-
-	case "ns-thrift", "thrift":
-		lis, err := net.Listen("tcp", ":9090")
-    		if err != nil {
-        		log.Fatalf("Failed to listen: %v", err)
-    		}
-    		for {
-			conn, err := lis.Accept()
-        		if err != nil {
-            			continue
-        		}
-			go func(c net.Conn) {
-            			defer c.Close()
-            
-            			// Read length header
-            			var length int32
-            			if err := binary.Read(c, binary.BigEndian, &length); err != nil {
-                			return
-            			}
-            			buf := make([]byte, length)
-            			if _, err := io.ReadFull(c, buf); err != nil {
-                			return
-            			}
-
-            			// Perform actual Thrift deserialization
-            			transport := thrift.NewTMemoryBufferLen(int(length))
-            			transport.Write(buf)
-            			protocol := thrift.NewTBinaryProtocolConf(transport, nil)
-            
-            			// Unmarshal bytes into payload
-            			var payload thrift_order.OrderPayload
-            			_ = payload.Read(context.Background(), protocol)
-			}(conn)
-    		}
-
-	case "ns-flatbuffers", "flatbuffers":
-		http.HandleFunc("/process", func(w http.ResponseWriter, r *http.Request) {
-			body, err := io.ReadAll(r.Body)
-			if err == nil && len(body) >= 4 {
-				// Zero-Copy access: Access root table and read fields without object allocation
-				payload := fb_order.GetRootAsOrderPayload(body, 0)
-				_ = payload.OrderId()
-				_ = payload.ItemsLength()
-			}
-			w.WriteHeader(http.StatusOK)
-		})
-		log.Fatal(http.ListenAndServe(":8080", nil))
-	}
+func toProto(p OrderPayload) *pb.OrderPayload {
+ 	items:=make([]*pb.OrderItem,len(p.Items))
+ 	for i,x:=range p.Items { items[i]=&pb.OrderItem{ItemId:x.ItemID,Quantity:x.Quantity,Price:x.Price} }
+ 	return &pb.OrderPayload{OrderId:p.OrderID,UserId:p.UserID,Items:items,TotalAmount:p.TotalAmount}
 }
 
-// -------------------------------------------------------------------                                                                                                       
-// GATEWAY SERVICE                                                                                                                                                           
-// -------------------------------------------------------------------                                                                                                       
-func runGateway() {                                                                                                                                                          
-	protocol := os.Getenv("PROTOCOL")                                                                                                                                    
-	workerHost := os.Getenv("WORKER_HOST")                                                                                                                               
-	log.Printf("Starting Gateway Service targeting %s via %s", workerHost, protocol)                                                                                     
+func encodeHTTP(protocol string,dummyData OrderPayload) ([]byte,string,error) {
+ 	switch protocol {
+ 		case "json":
+  			b,e:=json.Marshal(dummyData); return b,"application/json",e
+ 		case "msgpack":
+  			b,e:=msgpack.Marshal(dummyData); return b,"application/x-msgpack",e
+ 		case "flatbuffers":
 
-	// Pre-establish gRPC client connection if using ns-grpc                                                                                                             
-	var grpcClient pb.OrderServiceClient                                                                                                                                 
-	if protocol == "ns-grpc" || protocol == "grpc" {                                                                                                                     
-		conn, err := grpc.Dial(                                                                                                                                      
-			fmt.Sprintf("%s:50051", workerHost),                                                                                                                 
-			grpc.WithTransportCredentials(insecure.NewCredentials()),                                                                                            
-		)                                                                                                                                                            
-		if err != nil {                                                                                                                                              
-			log.Fatalf("Failed to connect to gRPC worker: %v", err)                                                                                              
-		}                                                                                                                                                            
-		defer conn.Close()                                                                                                                                           
-		grpcClient = pb.NewOrderServiceClient(conn)                                                                                                                  
-	}                                                                                                                                                                    
-	http.HandleFunc("/checkout", func(w http.ResponseWriter, r *http.Request) {                                                                                          
-
-		dummyData := generateDummyPayload()                                                                                                                          
-		var payloadBytes int                                                                                                                                         
-
-		switch protocol {                                                                                                                                            
-		case "ns-json", "json":                                                                                                                                      
-			body, _ := json.Marshal(dummyData)                                                                                                                   
-			payloadBytes = len(body)                                                                                                                             
-			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/json", bytes.NewBuffer(body))                                 
-			if err == nil {                                                                                                                                      
-				resp.Body.Close()                                                                                                                            
-			}                                                                                                                                                    
-
-		case "ns-msgpack", "msgpack":                                                                                                                                
-			body, _ := msgpack.Marshal(dummyData)                                                                                                                
-			payloadBytes = len(body)                                                                                                                             
-			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/x-msgpack", bytes.NewBuffer(body))                            
-			if err == nil {                                                                                                                                      
-				resp.Body.Close()                                                                                                                            
-			}                                                                                                                                                    
-
-		case "ns-grpc", "grpc":                                                                                                                                      
-			pbItems := make([]*pb.OrderItem, len(dummyData.Items))                                                                                               
-			for i, item := range dummyData.Items {                                                                                                               
-				pbItems[i] = &pb.OrderItem{                                                                                                                  
-					ItemId:   item.ItemID,                                                                                                               
-					Quantity: item.Quantity,                                                                                                             
-					Price:    item.Price,                                                                                                                
-				}                                                                                                                                                    
-			}                                                                                                                                                    
-			pbPayload := &pb.OrderPayload{                                                                                                                       
-				OrderId:     dummyData.OrderID,                                                                                                              
-				UserId:      dummyData.UserID,                                                                                                               
-				Items:       pbItems,                                                                                                                        
-				TotalAmount: dummyData.TotalAmount,                                                                                                          
-			}                                                                                                                                                    
-
-			// Calculate exact serialized Protobuf wire byte size
-			payloadBytes = proto.Size(pbPayload)                                                                                                                 
-
-			_, _ = grpcClient.ProcessOrder(r.Context(), pbPayload)                                                                                               
-
-		case "ns-thrift", "thrift":                                                                                                                                  
-			items := make([]*thrift_order.OrderItem, len(dummyData.Items))                                                                                       
-			for i, item := range dummyData.Items {                                                                                                               
-				items[i] = &thrift_order.OrderItem{                                                                                                          
-					ItemID:   item.ItemID,                                                                                                               
-					Quantity: item.Quantity,                                                                                                             
-					Price:    item.Price,                                                                                                                
-				}                                                                                                                                                    
-			}                                                                                                                                                    
-			thriftPayload := &thrift_order.OrderPayload{                                                                                                         
-				OrderID:     dummyData.OrderID,                                                                                                              
-				UserID:      dummyData.UserID,                                                                                                               
-				Items:       items,                                                                                                                          
-				TotalAmount: dummyData.TotalAmount,                                                                                                          
-			}                                                                                                                                                    
-
-			transport := thrift.NewTMemoryBuffer()                                                                                                               
-			prot := thrift.NewTBinaryProtocolConf(transport, nil)                                                                                            
-			if err := thriftPayload.Write(context.Background(), prot); err == nil {                                                                          
-				body := transport.Bytes()                                                                                                                    
-				payloadBytes = len(body)                                                                                                                     
-
-				conn, err := net.Dial("tcp", fmt.Sprintf("%s:9090", workerHost))                                                                             
-				if err == nil {                                                                                                                              
-					_ = binary.Write(conn, binary.BigEndian, int32(len(body)))                                                                           
-					_, _ = conn.Write(body)                                                                                                              
-					conn.Close()                                                                                                                         
-				}                                                                                                                                            
-			}                                                                                                                                                    
-
-		case "ns-flatbuffers", "flatbuffers":
 			builder := flatbuffers.NewBuilder(1024)
 
 			// 1. Serialize OrderItem elements (Bottom-Up construction)
@@ -290,29 +174,160 @@ func runGateway() {
 			// 5. Finish buffer and record true dynamic length
 			builder.Finish(payloadOffset)
 			buf := builder.FinishedBytes()
-			payloadBytes = len(buf)
+			return buf, "application/octet-stream", nil
 
-			resp, err := http.Post(fmt.Sprintf("http://%s:8080/process", workerHost), "application/octet-stream", bytes.NewBuffer(buf))
-			if err == nil {
-				resp.Body.Close()
-			}                                                                                                                                                   
-		}                                                                                                                                                            
+			
+ 	}
+ 	return nil,"",errors.New("unsupported HTTP protocol")
+}
 
-		// Log exact wire payload size for bash script log extraction
-		log.Printf("BENCHMARK_PAYLOAD_BYTES: %d", payloadBytes)                                                                                              
+func decodeAndProcess(ctx context.Context, protocol string,b []byte) (token string,err error) {
+ 	defer func() { if recover()!=nil { token=""; err=errors.New("invalid payload") } }()
+ 	switch protocol {
+ 		case "json","msgpack":
+  			var p OrderPayload
+  			if protocol=="json" { err=json.Unmarshal(b,&p) } else { err=msgpack.Unmarshal(b,&p) }
+  			if err!=nil { return "",err }
+  			return processOrder(ctx,nativeView{&p})
+ 		case "flatbuffers":
+ 		 	if len(b)<8 { return "",errors.New("short FlatBuffers payload") }
+  			return processOrder(ctx,flatView{fb_order.GetRootAsOrderPayload(b,0)})
+ 	}
+ 	return "",errors.New("unsupported protocol")
+}
 
-		w.WriteHeader(http.StatusOK)                                                                                                                                 
-		_, _ = w.Write([]byte("OK"))                                                                                                                                 
-	})                                                                                                                                                                   
+type grpcOrderServer struct { pb.UnimplementedOrderServiceServer }
+func (s *grpcOrderServer) ProcessOrder(ctx context.Context,p *pb.OrderPayload) (*pb.OrderResponse,error) {
+ 	if p==nil { return nil,status.Error(codes.InvalidArgument,"missing order") }
+ 	token,err:=processOrder(ctx,protoView{p})
+ 	if err!=nil {
+  		if ctx.Err()!=nil { return nil,status.FromContextError(ctx.Err()).Err() }
+  		return nil,status.Error(codes.InvalidArgument,"invalid order")
+ 	}
+ 	// Retain the existing schema. Status carries the identical completion token
+ 	// used as the HTTP Worker response body.
+ 	return &pb.OrderResponse{Status:token},nil
+}
 
-	log.Fatal(http.ListenAndServe(":80", nil))                                                                                                                           
+func workerHandler(protocol string) http.Handler {
+ 	mux:=http.NewServeMux()
+ 	mux.HandleFunc("/process",func(w http.ResponseWriter,r *http.Request) {
+  		if r.Method!=http.MethodPost { w.Header().Set("Allow","POST"); http.Error(w,"POST required",405); return }
+  		defer r.Body.Close()
+  		b,err:=io.ReadAll(http.MaxBytesReader(w,r.Body,maxBody))
+  		if err!=nil { http.Error(w,"invalid or oversized body",400); return }
+  		token,err:=decodeAndProcess(r.Context(),protocol,b)
+  		if err!=nil { http.Error(w,"invalid order",400); return }
+  		w.Header().Set("Content-Type","text/plain; charset=utf-8")
+  		_,_ = io.WriteString(w,token)
+ 	})
+ 	return mux
+}
+
+func serveHTTP(addr string,h http.Handler) {
+ 	s:=&http.Server{Addr:addr,Handler:h,ReadHeaderTimeout:5*time.Second,
+  	ReadTimeout:15*time.Second,WriteTimeout:15*time.Second,IdleTimeout:90*time.Second}
+ 	log.Fatal(s.ListenAndServe())
+}
+
+func runWorker(protocol string) {
+ 	if protocol=="grpc" {
+  		lis,err:=net.Listen("tcp",":50051"); if err!=nil { log.Fatal(err) }
+  		s:=grpc.NewServer(grpc.MaxRecvMsgSize(maxBody))
+  		pb.RegisterOrderServiceServer(s,&grpcOrderServer{})
+  		log.Fatal(s.Serve(lis)); return
+ 	}
+ 	serveHTTP(":8080",workerHandler(protocol))
+}
+
+// Same explicit HTTP/1.1 connection policy for JSON, MessagePack, FlatBuffers.
+// gRPC retains its HTTP/2 stack; the experiment compares implementations.
+func newHTTPClient() *http.Client {
+ 	return &http.Client{Timeout:callTimeout,Transport:&http.Transport{
+  		Proxy:nil, DialContext:(&net.Dialer{Timeout:5*time.Second,KeepAlive:30*time.Second}).DialContext,
+  		MaxIdleConns:512,MaxIdleConnsPerHost:512,IdleConnTimeout:90*time.Second,
+  		ResponseHeaderTimeout:callTimeout,ForceAttemptHTTP2:false,
+ 	},CheckRedirect:func(_ *http.Request,_ []*http.Request) error { return http.ErrUseLastResponse }}
+}
+
+func gatewayHandler(protocol,host string,n int,client *http.Client,rpc pb.OrderServiceClient) http.Handler {
+ 	// Fixed dataset: compute expected result once, outside the measured requests.
+ 	// Payload construction and encoding still happen on every request.
+ 	expected,err:=processOrder(context.Background(),nativeView{ptrPayload(generatePayload(n))})
+ 	if err!=nil { panic(err) }
+	mux:=http.NewServeMux()
+ 	mux.HandleFunc("/checkout",func(w http.ResponseWriter,r *http.Request) {
+  		if r.Method!=http.MethodGet { w.Header().Set("Allow","GET"); http.Error(w,"GET required",405); return }
+  		ctx,cancel:=context.WithTimeout(r.Context(),callTimeout); defer cancel()
+  		p:=generatePayload(n)
+  		var token string
+  		var err error
+  		if protocol=="grpc" {
+   			var result *pb.OrderResponse
+   			result,err=rpc.ProcessOrder(ctx,toProto(p))
+   			if err==nil {
+    			if result==nil { err=errors.New("missing worker result") } else { token=result.GetStatus() }
+   			}
+  		} else {
+   			var b []byte; var contentType string
+   			b,contentType,err=encodeHTTP(protocol,p)
+   			if err==nil {
+    			var req *http.Request
+    			req,err=http.NewRequestWithContext(ctx,http.MethodPost,"http://"+net.JoinHostPort(host,"8080")+"/process",bytes.NewReader(b))
+    			if err==nil {
+     				req.Header.Set("Content-Type",contentType)
+     				var resp *http.Response
+     				resp,err=client.Do(req)
+     				if err==nil {
+      					// Fully read the bounded completion response before closing, enabling reuse.
+      					var body []byte
+      					body,err=io.ReadAll(io.LimitReader(resp.Body,1025))
+      					closeErr:=resp.Body.Close()
+      					if err==nil { err=closeErr }
+      					if err==nil && (resp.StatusCode!=http.StatusOK || len(body)>1024) { err=errors.New("invalid worker response") }
+      					token=string(body)
+     				}
+    			}
+   			}
+  		}
+  		if err!=nil || token!=expected {
+   			code:=http.StatusBadGateway
+   			if ctx.Err()!=nil || errors.Is(err,context.DeadlineExceeded) || status.Code(err)==codes.DeadlineExceeded { code=http.StatusGatewayTimeout }
+   			http.Error(w,"worker failed or returned an incorrect result",code); return
+  		}
+  		w.Header().Set("Content-Type","text/plain; charset=utf-8")
+  		_,_ = io.WriteString(w,"OK")
+ 	})
+ 	return mux
+}
+
+func ptrPayload(p OrderPayload) *OrderPayload { return &p }
+
+func runGateway(protocol string,n int) {
+ 	host:=os.Getenv("WORKER_HOST"); if host=="" { log.Fatal("WORKER_HOST is required") }
+ 	client:=newHTTPClient(); defer client.CloseIdleConnections()
+ 	var rpc pb.OrderServiceClient
+ 	if protocol=="grpc" {
+  		conn,err:=grpc.Dial(net.JoinHostPort(host,"50051"),grpc.WithTransportCredentials(insecure.NewCredentials()),
+   		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxBody),grpc.MaxCallSendMsgSize(maxBody)))
+  		if err!=nil { log.Fatal(err) }; defer conn.Close()
+  		rpc=pb.NewOrderServiceClient(conn)
+ 	}
+ 	serveHTTP(":80",gatewayHandler(protocol,host,n,client,rpc))
 }
 
 func main() {
-	role := os.Getenv("SERVICE_ROLE")
-	if role == "worker" {
-		runWorker()
-	} else {
-		runGateway()
-	}
+ 	protocol:=strings.TrimPrefix(os.Getenv("PROTOCOL"),"ns-")
+ 	switch protocol { case "json","msgpack","grpc","flatbuffers": default: log.Fatal("PROTOCOL must be json, msgpack, grpc, or flatbuffers (optional ns- prefix)") }
+ 	n:=10
+ 	if raw:=os.Getenv("PAYLOAD_SIZE"); raw!="" {
+  		var err error; n,err=strconv.Atoi(raw)
+  		if err!=nil || n<1 || n>maxItems { log.Fatal("PAYLOAD_SIZE must be an integer from 1 to 10000") }
+ 	}
+ 	switch os.Getenv("SERVICE_ROLE") {
+ 		case "worker": runWorker(protocol)
+ 		case "gateway","": runGateway(protocol,n)
+ 		default: log.Fatal("SERVICE_ROLE must be worker or gateway")
+ 	}
 }
+
