@@ -1,0 +1,518 @@
+2026-10-14T14:04:02.587538782Z WARNING: failed to read int from file: open /sys/devices/system/cpu/cpu0/online: no such file or directory
+2026-10-14T14:04:02.614307093Z I1014 14:04:02.613479       1 exporter.go:121] Kepler running on version: v0.8.0
+2026-10-14T14:04:02.614360418Z I1014 14:04:02.613736       1 config.go:340] using gCgroup ID in the BPF program: true
+2026-10-14T14:04:02.614365636Z I1014 14:04:02.613830       1 config.go:342] kernel version: 7
+2026-10-14T14:04:02.640477412Z I1014 14:04:02.639776       1 power.go:85] Unable to obtain power, use estimate method
+2026-10-14T14:04:02.640509711Z I1014 14:04:02.639923       1 redfish.go:167] failed to get redfish credential file path
+2026-10-14T14:04:02.643685952Z I1014 14:04:02.642703       1 acpi.go:67] Could not find any ACPI power meter path. Is it a VM?
+2026-10-14T14:04:02.643733113Z I1014 14:04:02.642771       1 power.go:79] using none to obtain power
+2026-10-14T14:04:02.647733294Z WARNING: failed to read int from file: open /sys/devices/system/cpu/cpu0/online: no such file or directory
+2026-10-14T14:04:02.660231505Z I1014 14:04:02.659203       1 exporter.go:87] Number of CPUs: 64
+2026-10-14T14:04:03.326457596Z W1014 14:04:03.325609       1 exporter.go:134] failed to attach tp/writeback/writeback_dirty_page: neither debugfs nor tracefs are mounted. Kepler will not collect page cache write events. This will affect the DRAM power model estimation on VMs.
+2026-10-14T14:04:03.485839563Z I1014 14:04:03.483782       1 watcher.go:83] Using in cluster k8s config
+2026-10-14T14:04:03.589436696Z I1014 14:04:03.587485       1 watcher.go:229] k8s APIserver watcher was started
+2026-10-14T14:04:03.603324152Z I1014 14:04:03.602370       1 process_energy.go:130] Using the Ratio Power Model to estimate PROCESS_TOTAL Power
+2026-10-14T14:04:03.603343993Z I1014 14:04:03.602430       1 process_energy.go:131] Feature names: [bpf_cpu_time_ms]
+2026-10-14T14:04:03.617788095Z I1014 14:04:03.616481       1 process_energy.go:130] Using the Ratio Power Model to estimate PROCESS_COMPONENTS Power
+2026-10-14T14:04:03.617806502Z I1014 14:04:03.616540       1 process_energy.go:131] Feature names: [bpf_cpu_time_ms bpf_cpu_time_ms bpf_cpu_time_ms   gpu_compute_util]
+2026-10-14T14:04:03.698540786Z I1014 14:04:03.696765       1 regressor.go:276] Created predictor linear for trainer: "SGDRegressorTrainer"
+2026-10-14T14:04:03.698565678Z I1014 14:04:03.697254       1 model.go:124] Requesting for Machine Spec: &{authenticamd qemuvirtualversion_2.5+ 64 4 125 1800 1}
+2026-10-14T14:04:03.698578412Z I1014 14:04:03.697291       1 node_platform_energy.go:53] Using the Regressor/AbsPower Power Model to estimate Node Platform Power
+2026-10-14T14:04:03.762712472Z I1014 14:04:03.760700       1 regressor.go:276] Created predictor linear for trainer: "SGDRegressorTrainer"
+2026-10-14T14:04:03.781590320Z I1014 14:04:03.760755       1 regressor.go:276] Created predictor linear for trainer: "SGDRegressorTrainer"
+2026-10-14T14:04:03.781615129Z I1014 14:04:03.760764       1 regressor.go:276] Created predictor linear for trainer: "SGDRegressorTrainer"
+2026-10-14T14:04:03.781622264Z I1014 14:04:03.760772       1 regressor.go:276] Created predictor linear for trainer: "SGDRegressorTrainer"
+2026-10-14T14:04:03.781629881Z I1014 14:04:03.760782       1 model.go:124] Requesting for Machine Spec: &{authenticamd qemuvirtualversion_2.5+ 64 4 125 1800 1}
+2026-10-14T14:04:03.781637650Z I1014 14:04:03.760809       1 node_component_energy.go:57] Using the Regressor/AbsPower Power Model to estimate Node Component Power
+2026-10-14T14:04:03.781644244Z I1014 14:04:03.761536       1 prometheus_collector.go:95] Registered Container Prometheus metrics
+2026-10-14T14:04:03.781651111Z I1014 14:04:03.761584       1 prometheus_collector.go:100] Registered VM Prometheus metrics
+2026-10-14T14:04:03.781657433Z I1014 14:04:03.761604       1 prometheus_collector.go:104] Registered Node Prometheus metrics
+2026-10-14T14:04:03.781791356Z I1014 14:04:03.766494       1 exporter.go:238] starting to listen on 0.0.0.0:9102
+2026-10-14T14:04:03.781809195Z I1014 14:04:03.767562       1 exporter.go:262] Started Kepler in 1.15437201s
+2026-10-14T14:04:03.781813567Z I1014 14:04:03.767664       1 exporter.go:254] Starting server without TLS
+2026-10-14T14:31:47.540416996Z E1014 14:31:47.538462       1 watcher.go:189] parsing pod worker-service-6b5bf86b5b-jsxf8 ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:31:48.195316495Z E1014 14:31:48.193791       1 watcher.go:189] parsing pod gateway-service-777f874fbf-tltx5 ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:31:49.305503182Z E1014 14:31:49.304418       1 watcher.go:189] parsing pod gateway-service-777f874fbf-tltx5 ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:31:49.424426883Z E1014 14:31:49.422549       1 watcher.go:189] parsing pod gateway-service-ff6d9db49-n6lj7 ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:31:53.744678314Z E1014 14:31:53.743565       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:31:53.929353552Z E1014 14:31:53.927391       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:31:55.985813083Z E1014 14:31:55.984235       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:31:56.216681084Z E1014 14:31:56.215588       1 watcher.go:189] parsing pod worker-service-6f8999b98c-j4wmc ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:31:56.842276240Z E1014 14:31:56.841453       1 watcher.go:189] parsing pod gateway-service-67544f774-tz8mr ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:31:58.058383471Z E1014 14:31:58.056708       1 watcher.go:189] parsing pod gateway-service-67544f774-tz8mr ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:31:58.083679185Z E1014 14:31:58.082495       1 watcher.go:189] parsing pod gateway-service-54cf7b9794-6gqcd ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:02.963660659Z E1014 14:32:02.961661       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:03.123777378Z E1014 14:32:03.122674       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:04.954714679Z E1014 14:32:04.953714       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:05.845369570Z E1014 14:32:05.844264       1 watcher.go:189] parsing pod worker-service-69c6b4c988-g9tz4 ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:05.917656991Z E1014 14:32:05.916584       1 watcher.go:189] containers not ready in pod: gateway-service-6766c85b9c-xswxr
+2026-10-14T14:32:06.148390801Z E1014 14:32:06.146787       1 watcher.go:189] parsing pod gateway-service-6766c85b9c-xswxr ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:07.041394712Z E1014 14:32:07.039795       1 watcher.go:189] parsing pod gateway-service-6766c85b9c-xswxr ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:07.156488704Z E1014 14:32:07.154779       1 watcher.go:189] parsing pod gateway-service-6dbbf496f7-qgjq8 ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:11.944212609Z E1014 14:32:11.942550       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:12.518609567Z E1014 14:32:12.517501       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:13.394608452Z E1014 14:32:13.393560       1 watcher.go:189] containers not ready in pod: worker-service-76959f5576-f6xs2
+2026-10-14T14:32:13.571426353Z E1014 14:32:13.570385       1 watcher.go:189] parsing pod worker-service-76959f5576-f6xs2 ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:13.634501576Z E1014 14:32:13.632654       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:14.036442363Z E1014 14:32:14.034386       1 watcher.go:189] parsing pod gateway-service-59589d56d9-2s8qr ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:15.157630411Z E1014 14:32:15.155751       1 watcher.go:189] parsing pod gateway-service-59589d56d9-2s8qr ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:15.262411599Z E1014 14:32:15.255448       1 watcher.go:189] parsing pod gateway-service-6dddbbc6d5-mmlvs ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:19.594562780Z E1014 14:32:19.593338       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:19.751413768Z E1014 14:32:19.750317       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:21.608483995Z E1014 14:32:21.605820       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:22.271721774Z E1014 14:32:22.270481       1 watcher.go:189] parsing pod worker-service-7fffb68b45-kpllw ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:22.876747450Z E1014 14:32:22.875490       1 watcher.go:189] containers not ready in pod: gateway-service-6dcc47d86d-xf457
+2026-10-14T14:32:23.175599645Z E1014 14:32:23.173681       1 watcher.go:189] parsing pod gateway-service-6dcc47d86d-xf457 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:24.023586852Z E1014 14:32:24.022374       1 watcher.go:189] parsing pod gateway-service-6dcc47d86d-xf457 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:24.153285835Z E1014 14:32:24.151787       1 watcher.go:189] parsing pod gateway-service-7fc4cfc6b8-8b45c ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:32:28.977555335Z E1014 14:32:28.976223       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:29.056794753Z E1014 14:32:29.055453       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:32:31.170463840Z E1014 14:32:31.168443       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:25.998672874Z E1014 14:35:25.997504       1 watcher.go:189] parsing pod worker-service-5dc5d4f9d9-cx4gr ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:26.499771518Z E1014 14:35:26.498610       1 watcher.go:189] parsing pod gateway-service-788f866646-d2b52 ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:27.696710265Z E1014 14:35:27.695487       1 watcher.go:189] parsing pod gateway-service-788f866646-d2b52 ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:27.859570707Z E1014 14:35:27.857745       1 watcher.go:189] parsing pod gateway-service-56d7dbdb6-p8wqd ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:32.134647671Z E1014 14:35:32.132635       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:32.894539240Z E1014 14:35:32.892703       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:33.918723224Z E1014 14:35:33.916740       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:34.348245483Z E1014 14:35:34.346656       1 watcher.go:189] parsing pod worker-service-7d5487979d-cg6wr ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:34.877534977Z E1014 14:35:34.875459       1 watcher.go:189] parsing pod gateway-service-6fbb759477-mqccv ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:36.096428276Z E1014 14:35:36.094582       1 watcher.go:189] parsing pod gateway-service-6fbb759477-mqccv ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:36.209613287Z E1014 14:35:36.208436       1 watcher.go:189] parsing pod gateway-service-79548cdbbf-k75w8 ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:40.252439178Z E1014 14:35:40.250782       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:40.355639735Z E1014 14:35:40.353771       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:42.245570427Z E1014 14:35:42.243655       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:42.701248581Z E1014 14:35:42.699717       1 watcher.go:189] parsing pod worker-service-555b885bd5-rnw9r ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:42.928472881Z E1014 14:35:42.926448       1 watcher.go:189] parsing pod gateway-service-764dd95bc8-cn2pl ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:44.097366594Z E1014 14:35:44.096391       1 watcher.go:189] parsing pod gateway-service-764dd95bc8-cn2pl ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:44.220676309Z E1014 14:35:44.219644       1 watcher.go:189] parsing pod gateway-service-7fc85745f4-gmnd2 ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:49.445763943Z E1014 14:35:49.444325       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:49.516501521Z E1014 14:35:49.515383       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:51.481775995Z E1014 14:35:51.480661       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:51.505432744Z E1014 14:35:51.503644       1 watcher.go:189] parsing pod worker-service-5db6654bf7-d29ml ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:51.901765860Z E1014 14:35:51.900717       1 watcher.go:189] containers not ready in pod: gateway-service-86f499464b-pwq8d
+2026-10-14T14:35:52.185270151Z E1014 14:35:52.183405       1 watcher.go:189] parsing pod gateway-service-86f499464b-pwq8d ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:53.095422702Z E1014 14:35:53.092615       1 watcher.go:189] parsing pod gateway-service-86f499464b-pwq8d ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:53.219711639Z E1014 14:35:53.218369       1 watcher.go:189] parsing pod gateway-service-64685cdd6b-mxc78 ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:58.676424702Z E1014 14:35:58.674583       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:58.741763898Z E1014 14:35:58.740520       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:58.803631830Z E1014 14:35:58.802519       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:35:59.070531224Z E1014 14:35:59.068827       1 watcher.go:189] containers not ready in pod: worker-service-67dd86568d-hrh68
+2026-10-14T14:35:59.251757611Z E1014 14:35:59.250691       1 watcher.go:189] parsing pod worker-service-67dd86568d-hrh68 ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:35:59.640266849Z E1014 14:35:59.638765       1 watcher.go:189] parsing pod gateway-service-7c5876ff6c-g7w7j ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:36:00.979464067Z E1014 14:36:00.977410       1 watcher.go:189] parsing pod gateway-service-7c5876ff6c-g7w7j ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:36:01.060413918Z E1014 14:36:01.058467       1 watcher.go:189] parsing pod gateway-service-564746dc59-nwcgf ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:36:04.935302527Z E1014 14:36:04.934396       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:36:05.815798960Z E1014 14:36:05.814534       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:36:07.984411811Z E1014 14:36:07.982725       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:38:58.433533156Z E1014 14:38:58.431398       1 watcher.go:189] parsing pod worker-service-6b5bf86b5b-fgjnk ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:38:59.173679833Z E1014 14:38:59.172247       1 watcher.go:189] parsing pod gateway-service-777f874fbf-7l24k ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:00.261514538Z E1014 14:39:00.259755       1 watcher.go:189] parsing pod gateway-service-777f874fbf-7l24k ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:00.374703133Z E1014 14:39:00.373474       1 watcher.go:189] parsing pod gateway-service-ff6d9db49-kdkzf ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:05.108630064Z E1014 14:39:05.107514       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:05.181794208Z E1014 14:39:05.180705       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:07.038354289Z E1014 14:39:07.036316       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:07.327790127Z E1014 14:39:07.326650       1 watcher.go:189] parsing pod worker-service-6f8999b98c-j6wnp ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:07.991553991Z E1014 14:39:07.989497       1 watcher.go:189] parsing pod gateway-service-67544f774-zdddm ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:09.113651281Z E1014 14:39:09.112698       1 watcher.go:189] parsing pod gateway-service-67544f774-zdddm ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:09.263793847Z E1014 14:39:09.262546       1 watcher.go:189] containers not ready in pod: gateway-service-54cf7b9794-8l7fc
+2026-10-14T14:39:09.578606903Z E1014 14:39:09.576800       1 watcher.go:189] parsing pod gateway-service-54cf7b9794-8l7fc ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:13.642351060Z E1014 14:39:13.639777       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:14.261638706Z E1014 14:39:14.260644       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:15.327712405Z E1014 14:39:15.326319       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:15.384691819Z E1014 14:39:15.383754       1 watcher.go:189] parsing pod worker-service-69c6b4c988-x29pg ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:15.977806375Z E1014 14:39:15.976631       1 watcher.go:189] containers not ready in pod: gateway-service-6766c85b9c-gks6s
+2026-10-14T14:39:16.167716393Z E1014 14:39:16.166436       1 watcher.go:189] parsing pod gateway-service-6766c85b9c-gks6s ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:17.366360630Z E1014 14:39:17.362686       1 watcher.go:189] parsing pod gateway-service-6766c85b9c-gks6s ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:17.471405162Z E1014 14:39:17.469588       1 watcher.go:189] containers not ready in pod: gateway-service-6dbbf496f7-s7kkc
+2026-10-14T14:39:17.673465274Z E1014 14:39:17.671792       1 watcher.go:189] parsing pod gateway-service-6dbbf496f7-s7kkc ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:22.706728605Z E1014 14:39:22.705664       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:22.778524605Z E1014 14:39:22.777397       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:23.683614089Z E1014 14:39:23.682300       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:24.502253790Z E1014 14:39:24.501514       1 watcher.go:189] parsing pod worker-service-76959f5576-c5q8m ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:24.740566678Z E1014 14:39:24.738586       1 watcher.go:189] parsing pod gateway-service-59589d56d9-qfblh ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:25.769340499Z E1014 14:39:25.767711       1 watcher.go:189] parsing pod gateway-service-59589d56d9-qfblh ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:25.895614418Z E1014 14:39:25.895289       1 watcher.go:189] containers not ready in pod: gateway-service-6dddbbc6d5-z86h9
+2026-10-14T14:39:26.096817242Z E1014 14:39:26.095560       1 watcher.go:189] parsing pod gateway-service-6dddbbc6d5-z86h9 ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:31.218639182Z E1014 14:39:31.217383       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:31.519828400Z E1014 14:39:31.518654       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:33.582526291Z E1014 14:39:33.580554       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:34.664241481Z E1014 14:39:34.659629       1 watcher.go:189] containers not ready in pod: worker-service-7fffb68b45-8f4l2
+2026-10-14T14:39:34.859519619Z E1014 14:39:34.858607       1 watcher.go:189] parsing pod worker-service-7fffb68b45-8f4l2 ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:35.131734228Z E1014 14:39:35.130436       1 watcher.go:189] parsing pod gateway-service-6dcc47d86d-cmkxc ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:36.265815418Z E1014 14:39:36.264708       1 watcher.go:189] parsing pod gateway-service-6dcc47d86d-cmkxc ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:36.395498490Z E1014 14:39:36.394413       1 watcher.go:189] containers not ready in pod: gateway-service-7fc4cfc6b8-wblzp
+2026-10-14T14:39:36.586409053Z E1014 14:39:36.585483       1 watcher.go:189] parsing pod gateway-service-7fc4cfc6b8-wblzp ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:39:41.555611441Z E1014 14:39:41.554796       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:41.742316233Z E1014 14:39:41.739700       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:39:43.457572076Z E1014 14:39:43.455672       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:15.037653919Z E1014 14:57:15.036617       1 watcher.go:189] containers not ready in pod: gateway-service-789ff49567-2gh9m
+2026-10-14T14:57:15.061776328Z E1014 14:57:15.060497       1 watcher.go:189] containers not ready in pod: worker-service-6b5f78bb54-4mz5s
+2026-10-14T14:57:15.343570531Z E1014 14:57:15.341583       1 watcher.go:189] parsing pod gateway-service-789ff49567-2gh9m ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:15.406348879Z E1014 14:57:15.405620       1 watcher.go:189] parsing pod worker-service-6b5f78bb54-4mz5s ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:21.769594797Z E1014 14:57:21.767568       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:21.850700289Z E1014 14:57:21.849503       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:24.368500678Z E1014 14:57:24.367472       1 watcher.go:189] containers not ready in pod: gateway-service-7d7859dfcd-bqtsm
+2026-10-14T14:57:24.512605116Z E1014 14:57:24.510602       1 watcher.go:189] containers not ready in pod: worker-service-54955d7995-wj55c
+2026-10-14T14:57:24.625660166Z E1014 14:57:24.623563       1 watcher.go:189] parsing pod gateway-service-7d7859dfcd-bqtsm ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:24.754738938Z E1014 14:57:24.753613       1 watcher.go:189] parsing pod worker-service-54955d7995-wj55c ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:31.037763988Z E1014 14:57:31.036468       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:31.147703491Z E1014 14:57:31.143819       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:32.793559687Z E1014 14:57:32.792497       1 watcher.go:189] containers not ready in pod: gateway-service-7d8c9b8c56-hsn47
+2026-10-14T14:57:32.830825570Z E1014 14:57:32.828530       1 watcher.go:189] containers not ready in pod: worker-service-856588d5cc-wthrt
+2026-10-14T14:57:33.006607012Z E1014 14:57:33.003840       1 watcher.go:189] parsing pod gateway-service-7d8c9b8c56-hsn47 ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:33.184605568Z E1014 14:57:33.181522       1 watcher.go:189] parsing pod worker-service-856588d5cc-wthrt ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:39.189768681Z E1014 14:57:39.188722       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:39.260438230Z E1014 14:57:39.257704       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:40.828488640Z E1014 14:57:40.826753       1 watcher.go:189] containers not ready in pod: gateway-service-8465cdd9d7-pf4m8
+2026-10-14T14:57:41.052455932Z E1014 14:57:41.050719       1 watcher.go:189] containers not ready in pod: worker-service-6bc648dbb6-brc85
+2026-10-14T14:57:41.167511285Z E1014 14:57:41.166444       1 watcher.go:189] parsing pod gateway-service-8465cdd9d7-pf4m8 ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:41.265701713Z E1014 14:57:41.263575       1 watcher.go:189] parsing pod worker-service-6bc648dbb6-brc85 ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:47.430584643Z E1014 14:57:47.429583       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:47.515685437Z E1014 14:57:47.513669       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:49.317841758Z E1014 14:57:49.316826       1 watcher.go:189] containers not ready in pod: gateway-service-8b86bddb7-m45gm
+2026-10-14T14:57:49.354570370Z E1014 14:57:49.353309       1 watcher.go:189] containers not ready in pod: worker-service-68ff5f5978-k9m9s
+2026-10-14T14:57:49.506728486Z E1014 14:57:49.505572       1 watcher.go:189] parsing pod gateway-service-8b86bddb7-m45gm ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:49.623645998Z E1014 14:57:49.621571       1 watcher.go:189] parsing pod worker-service-68ff5f5978-k9m9s ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T14:57:56.721799467Z E1014 14:57:56.720422       1 watcher.go:189] could not convert obj: pods
+2026-10-14T14:57:56.808323091Z E1014 14:57:56.806767       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:18.317717529Z E1014 15:10:18.316727       1 watcher.go:189] containers not ready in pod: gateway-service-85dc68cb4c-229lk
+2026-10-14T15:10:18.398532698Z E1014 15:10:18.395756       1 watcher.go:189] containers not ready in pod: worker-service-5dbfd8cfc8-7sxph
+2026-10-14T15:10:18.541610522Z E1014 15:10:18.540436       1 watcher.go:189] parsing pod gateway-service-85dc68cb4c-229lk ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:18.748629297Z E1014 15:10:18.747280       1 watcher.go:189] parsing pod worker-service-5dbfd8cfc8-7sxph ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:25.023345360Z E1014 15:10:25.021505       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:25.087756235Z E1014 15:10:25.085716       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:25.867341329Z E1014 15:10:25.865681       1 watcher.go:189] containers not ready in pod: gateway-service-7cd5f688d4-qvxnk
+2026-10-14T15:10:26.165684365Z E1014 15:10:26.164743       1 watcher.go:189] containers not ready in pod: worker-service-78559cc797-6zgxt
+2026-10-14T15:10:26.200658065Z E1014 15:10:26.198671       1 watcher.go:189] parsing pod gateway-service-7cd5f688d4-qvxnk ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:26.391444635Z E1014 15:10:26.390500       1 watcher.go:189] parsing pod worker-service-78559cc797-6zgxt ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:32.170571276Z E1014 15:10:32.168812       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:32.246543869Z E1014 15:10:32.244441       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:32.999604561Z E1014 15:10:32.998559       1 watcher.go:189] containers not ready in pod: gateway-service-78ddc898dd-29cmv
+2026-10-14T15:10:33.068519553Z E1014 15:10:33.066512       1 watcher.go:189] containers not ready in pod: worker-service-74577dc4fc-dckfw
+2026-10-14T15:10:33.223767490Z E1014 15:10:33.222674       1 watcher.go:189] parsing pod gateway-service-78ddc898dd-29cmv ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:33.384399550Z E1014 15:10:33.383729       1 watcher.go:189] parsing pod worker-service-74577dc4fc-dckfw ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:37.952660653Z E1014 15:10:37.950698       1 watcher.go:189] containers not ready in pod: worker-service-56bf58496-cx8v7
+2026-10-14T15:10:37.984811795Z E1014 15:10:37.983669       1 watcher.go:189] containers not ready in pod: gateway-service-7f86c986b9-p4wwb
+2026-10-14T15:10:38.219667731Z E1014 15:10:38.218562       1 watcher.go:189] parsing pod worker-service-56bf58496-cx8v7 ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:38.331341365Z E1014 15:10:38.330311       1 watcher.go:189] parsing pod gateway-service-7f86c986b9-p4wwb ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:39.382313341Z E1014 15:10:39.380587       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:39.454625654Z E1014 15:10:39.452583       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:44.869497798Z E1014 15:10:44.867300       1 watcher.go:189] containers not ready in pod: gateway-service-795449d495-gnvsx
+2026-10-14T15:10:44.966703134Z E1014 15:10:44.965547       1 watcher.go:189] containers not ready in pod: worker-service-65cf56477d-6lg2w
+2026-10-14T15:10:45.182715066Z E1014 15:10:45.181348       1 watcher.go:189] parsing pod gateway-service-795449d495-gnvsx ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:45.321717870Z E1014 15:10:45.320621       1 watcher.go:189] parsing pod worker-service-65cf56477d-6lg2w ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:10:45.779349640Z E1014 15:10:45.777762       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:45.860658434Z E1014 15:10:45.859402       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:50.629270273Z E1014 15:10:50.627501       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:10:50.894767756Z E1014 15:10:50.893565       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:16:54.415695973Z E1014 15:16:54.414438       1 watcher.go:189] parsing pod worker-service-759594b887-n8g5s ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:16:54.675381066Z E1014 15:16:54.673493       1 watcher.go:189] parsing pod gateway-service-6bfd8c5f7b-d6tsm ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:16:55.758706223Z E1014 15:16:55.757542       1 watcher.go:189] parsing pod gateway-service-6bfd8c5f7b-d6tsm ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:16:55.855615835Z E1014 15:16:55.854422       1 watcher.go:189] parsing pod gateway-service-6c77c64584-nc4t9 ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:00.360571094Z E1014 15:17:00.357759       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:00.509390416Z E1014 15:17:00.507547       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:02.342434423Z E1014 15:17:02.338720       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:02.356709131Z E1014 15:17:02.354661       1 watcher.go:189] parsing pod worker-service-74cd8c4fb4-27qkj ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:03.020840898Z E1014 15:17:03.019605       1 watcher.go:189] parsing pod gateway-service-fc9c76d99-wzc7r ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:04.116267547Z E1014 15:17:04.114308       1 watcher.go:189] parsing pod gateway-service-fc9c76d99-wzc7r ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:04.224430366Z E1014 15:17:04.222707       1 watcher.go:189] parsing pod gateway-service-dcbcbdc75-nfq66 ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:08.826144868Z E1014 15:17:08.824676       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:09.563549738Z E1014 15:17:09.562564       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:09.633660196Z E1014 15:17:09.632552       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:10.012585598Z E1014 15:17:10.010781       1 watcher.go:189] parsing pod worker-service-795bc7bd76-4vvtx ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:10.405148760Z E1014 15:17:10.403508       1 watcher.go:189] parsing pod gateway-service-566c49b95f-hr8b9 ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:11.495663755Z E1014 15:17:11.494649       1 watcher.go:189] parsing pod gateway-service-566c49b95f-hr8b9 ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:11.646571776Z E1014 15:17:11.645576       1 watcher.go:189] parsing pod gateway-service-78d4c878bc-f9j7x ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:16.863741669Z E1014 15:17:16.862774       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:16.970373154Z E1014 15:17:16.968674       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:18.895641491Z E1014 15:17:18.893641       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:19.151252385Z E1014 15:17:19.150431       1 watcher.go:189] parsing pod worker-service-7cc9dcb6bf-g9f29 ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:19.841309673Z E1014 15:17:19.839420       1 watcher.go:189] parsing pod gateway-service-577c54cdcd-w29jt ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:20.949683602Z E1014 15:17:20.947658       1 watcher.go:189] parsing pod gateway-service-577c54cdcd-w29jt ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:21.037755888Z E1014 15:17:21.035767       1 watcher.go:189] containers not ready in pod: gateway-service-5ffd897c8b-k6f8z
+2026-10-14T15:17:21.213450132Z E1014 15:17:21.211615       1 watcher.go:189] parsing pod gateway-service-5ffd897c8b-k6f8z ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:25.307711929Z E1014 15:17:25.306577       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:26.348659179Z E1014 15:17:26.347510       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:27.345378641Z E1014 15:17:27.343546       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:27.375475129Z E1014 15:17:27.373734       1 watcher.go:189] containers not ready in pod: worker-service-8f565f9f-nr6m5
+2026-10-14T15:17:27.543378332Z E1014 15:17:27.542429       1 watcher.go:189] parsing pod worker-service-8f565f9f-nr6m5 ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:27.904470986Z E1014 15:17:27.902784       1 watcher.go:189] containers not ready in pod: gateway-service-6dfbcbbfc6-rsq64
+2026-10-14T15:17:28.115550537Z E1014 15:17:28.113733       1 watcher.go:189] parsing pod gateway-service-6dfbcbbfc6-rsq64 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:28.995762755Z E1014 15:17:28.994609       1 watcher.go:189] parsing pod gateway-service-6dfbcbbfc6-rsq64 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:29.118657374Z E1014 15:17:29.117384       1 watcher.go:189] parsing pod gateway-service-f9fcb5964-ljjh2 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:17:33.599336579Z E1014 15:17:33.597561       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:33.965787401Z E1014 15:17:33.964313       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:17:34.549654018Z E1014 15:17:34.548580       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:24.281696480Z E1014 15:25:24.280257       1 watcher.go:189] containers not ready in pod: gateway-service-55cffbbfcc-f7qrb
+2026-10-14T15:25:24.317639727Z E1014 15:25:24.316419       1 watcher.go:189] containers not ready in pod: worker-service-86bf79f8fd-lkcdp
+2026-10-14T15:25:24.493373962Z E1014 15:25:24.492353       1 watcher.go:189] parsing pod gateway-service-55cffbbfcc-f7qrb ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:24.621767734Z E1014 15:25:24.620640       1 watcher.go:189] parsing pod worker-service-86bf79f8fd-lkcdp ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:31.617560720Z E1014 15:25:31.616494       1 watcher.go:189] containers not ready in pod: gateway-service-7f74c4d44d-wb466
+2026-10-14T15:25:31.677363409Z E1014 15:25:31.676275       1 watcher.go:189] containers not ready in pod: worker-service-78689d4db7-5qwbf
+2026-10-14T15:25:31.796483381Z E1014 15:25:31.795569       1 watcher.go:189] parsing pod gateway-service-7f74c4d44d-wb466 ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:31.931809643Z E1014 15:25:31.930196       1 watcher.go:189] parsing pod worker-service-78689d4db7-5qwbf ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:32.642553039Z E1014 15:25:32.641272       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:32.758538427Z E1014 15:25:32.756334       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:36.955744612Z E1014 15:25:36.953722       1 watcher.go:189] containers not ready in pod: worker-service-6b5d98c54d-sl52j
+2026-10-14T15:25:36.955796236Z E1014 15:25:36.953807       1 watcher.go:189] containers not ready in pod: gateway-service-6dbf9df4cf-rdljh
+2026-10-14T15:25:37.193691378Z E1014 15:25:37.191837       1 watcher.go:189] parsing pod worker-service-6b5d98c54d-sl52j ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:37.288524160Z E1014 15:25:37.285703       1 watcher.go:189] parsing pod gateway-service-6dbf9df4cf-rdljh ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:38.222228286Z E1014 15:25:38.221526       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:38.276164182Z E1014 15:25:38.275400       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:42.916483405Z E1014 15:25:42.914776       1 watcher.go:189] containers not ready in pod: gateway-service-fd998b854-lm6lc
+2026-10-14T15:25:42.985530181Z E1014 15:25:42.984508       1 watcher.go:189] containers not ready in pod: worker-service-5869498f8f-8595v
+2026-10-14T15:25:43.232367625Z E1014 15:25:43.231591       1 watcher.go:189] parsing pod gateway-service-fd998b854-lm6lc ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:43.319405120Z E1014 15:25:43.318384       1 watcher.go:189] parsing pod worker-service-5869498f8f-8595v ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:44.427688638Z E1014 15:25:44.426641       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:44.497817028Z E1014 15:25:44.496831       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:49.527793422Z E1014 15:25:49.526528       1 watcher.go:189] containers not ready in pod: gateway-service-66d8887b69-pzx8k
+2026-10-14T15:25:49.688511334Z E1014 15:25:49.687416       1 watcher.go:189] containers not ready in pod: worker-service-588fd598c8-527hf
+2026-10-14T15:25:49.707766804Z E1014 15:25:49.706529       1 watcher.go:189] parsing pod gateway-service-66d8887b69-pzx8k ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:49.993344948Z E1014 15:25:49.991781       1 watcher.go:189] parsing pod worker-service-588fd598c8-527hf ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:25:50.919626173Z E1014 15:25:50.917454       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:50.984669959Z E1014 15:25:50.983578       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:56.679512151Z E1014 15:25:56.678577       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:25:56.739695044Z E1014 15:25:56.738419       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:33:55.529578767Z E1014 15:33:55.528380       1 watcher.go:189] parsing pod gateway-service-fcbc68fb9-r6fhh ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:33:55.610645566Z E1014 15:33:55.609477       1 watcher.go:189] containers not ready in pod: worker-service-78d85988db-g9547
+2026-10-14T15:33:55.881396526Z E1014 15:33:55.880376       1 watcher.go:189] parsing pod worker-service-78d85988db-g9547 ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:34:01.206791573Z E1014 15:34:01.204741       1 watcher.go:189] containers not ready in pod: worker-service-58bb76c865-kqdvg
+2026-10-14T15:34:01.224705000Z E1014 15:34:01.222789       1 watcher.go:189] containers not ready in pod: gateway-service-f6c4bc4c8-25f9g
+2026-10-14T15:34:01.554364980Z E1014 15:34:01.552713       1 watcher.go:189] parsing pod worker-service-58bb76c865-kqdvg ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:34:01.614381379Z E1014 15:34:01.612467       1 watcher.go:189] parsing pod gateway-service-f6c4bc4c8-25f9g ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:34:02.108700769Z E1014 15:34:02.106335       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:34:02.364314718Z E1014 15:34:02.363324       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:34:07.796429893Z E1014 15:34:07.794450       1 watcher.go:189] containers not ready in pod: gateway-service-7868c57649-xh8wc
+2026-10-14T15:34:07.814839338Z E1014 15:34:07.813831       1 watcher.go:189] containers not ready in pod: worker-service-b86b5c6db-8hz4k
+2026-10-14T15:34:08.188796821Z E1014 15:34:08.187835       1 watcher.go:189] parsing pod worker-service-b86b5c6db-8hz4k ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:34:08.277402071Z E1014 15:34:08.275556       1 watcher.go:189] parsing pod gateway-service-7868c57649-xh8wc ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:34:08.750719564Z E1014 15:34:08.749569       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:34:08.807376803Z E1014 15:34:08.805657       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:34:13.644833297Z E1014 15:34:13.643547       1 watcher.go:189] containers not ready in pod: worker-service-5b9cd59bfc-2n7st
+2026-10-14T15:34:13.697571171Z E1014 15:34:13.696553       1 watcher.go:189] containers not ready in pod: gateway-service-bcbf5c4c4-g24cb
+2026-10-14T15:34:13.914565099Z E1014 15:34:13.913665       1 watcher.go:189] parsing pod worker-service-5b9cd59bfc-2n7st ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:34:13.994811335Z E1014 15:34:13.994248       1 watcher.go:189] parsing pod gateway-service-bcbf5c4c4-g24cb ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:34:14.612740316Z E1014 15:34:14.611625       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:34:14.682823524Z E1014 15:34:14.680539       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:34:20.019232570Z E1014 15:34:20.017671       1 watcher.go:189] containers not ready in pod: gateway-service-5656c56d-mpt4c
+2026-10-14T15:34:20.131612847Z E1014 15:34:20.130524       1 watcher.go:189] containers not ready in pod: worker-service-5fdcdc55f-jqgjq
+2026-10-14T15:34:20.336300245Z E1014 15:34:20.334801       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:34:20.404826401Z E1014 15:34:20.402742       1 watcher.go:189] parsing pod gateway-service-5656c56d-mpt4c ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:34:20.454545819Z E1014 15:34:20.452715       1 watcher.go:189] parsing pod worker-service-5fdcdc55f-jqgjq ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:34:20.931587268Z E1014 15:34:20.929838       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:34:26.868759955Z E1014 15:34:26.867522       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:34:27.445372584Z E1014 15:34:27.443838       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:33.989261017Z E1014 15:41:33.986791       1 watcher.go:189] parsing pod worker-service-64c9f7f85f-m56lw ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:34.523446237Z E1014 15:41:34.522580       1 watcher.go:189] parsing pod gateway-service-9fffc7fb6-4k7kw ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:35.648360918Z E1014 15:41:35.647320       1 watcher.go:189] parsing pod gateway-service-9fffc7fb6-4k7kw ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:35.760603744Z E1014 15:41:35.758832       1 watcher.go:189] parsing pod gateway-service-59bf688474-d4fzm ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:41.004585096Z E1014 15:41:41.003537       1 watcher.go:189] containers not ready in pod: worker-service-859d8585b8-txg79
+2026-10-14T15:41:41.127510412Z E1014 15:41:41.125273       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:41.188253692Z E1014 15:41:41.186610       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:41.227840622Z E1014 15:41:41.226742       1 watcher.go:189] parsing pod worker-service-859d8585b8-txg79 ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:41.307347957Z E1014 15:41:41.304835       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:41.645810942Z E1014 15:41:41.644577       1 watcher.go:189] parsing pod gateway-service-75dd6d8b7c-5rvjm ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:42.723696501Z E1014 15:41:42.722378       1 watcher.go:189] parsing pod gateway-service-75dd6d8b7c-5rvjm ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:42.918643437Z E1014 15:41:42.916740       1 watcher.go:189] parsing pod gateway-service-54b5589d77-b6sw4 ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:47.310625160Z E1014 15:41:47.309553       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:47.446390785Z E1014 15:41:47.444790       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:49.336320936Z E1014 15:41:49.335325       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:49.365687865Z E1014 15:41:49.364697       1 watcher.go:189] parsing pod worker-service-d9c5c99f9-7tpp7 ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:49.980622822Z E1014 15:41:49.979646       1 watcher.go:189] parsing pod gateway-service-7ff67b5d5d-scst5 ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:51.101617447Z E1014 15:41:51.100722       1 watcher.go:189] parsing pod gateway-service-7ff67b5d5d-scst5 ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:51.211728620Z E1014 15:41:51.210309       1 watcher.go:189] containers not ready in pod: gateway-service-8b6bc747d-gddg4
+2026-10-14T15:41:51.375719028Z E1014 15:41:51.374581       1 watcher.go:189] parsing pod gateway-service-8b6bc747d-gddg4 ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:55.601468192Z E1014 15:41:55.600215       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:55.730283230Z E1014 15:41:55.729286       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:57.518840908Z E1014 15:41:57.518156       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:41:58.734777237Z E1014 15:41:58.733652       1 watcher.go:189] containers not ready in pod: worker-service-56688466fb-bbhkb
+2026-10-14T15:41:58.937351101Z E1014 15:41:58.935653       1 watcher.go:189] parsing pod gateway-service-54b594d49c-zqjrs ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:58.951331778Z E1014 15:41:58.949423       1 watcher.go:189] parsing pod worker-service-56688466fb-bbhkb ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:41:59.999273573Z E1014 15:41:59.998406       1 watcher.go:189] parsing pod gateway-service-54b594d49c-zqjrs ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:42:00.104819097Z E1014 15:42:00.103421       1 watcher.go:189] parsing pod gateway-service-69c486bb7c-qt8t4 ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:42:04.848600952Z E1014 15:42:04.846560       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:42:05.017590011Z E1014 15:42:05.015820       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:42:06.826633818Z E1014 15:42:06.824652       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:42:06.915558556Z E1014 15:42:06.913466       1 watcher.go:189] parsing pod worker-service-5456f67cd-bldrf ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:42:07.909696888Z E1014 15:42:07.907638       1 watcher.go:189] parsing pod gateway-service-9854b7c5f-7nvd5 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:42:08.839585460Z E1014 15:42:08.836830       1 watcher.go:189] parsing pod gateway-service-9854b7c5f-7nvd5 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:42:08.964575259Z E1014 15:42:08.963584       1 watcher.go:189] parsing pod gateway-service-57cb9cd567-bt6cp ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:42:12.222450566Z E1014 15:42:12.220806       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:42:13.240508374Z E1014 15:42:13.238526       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:42:14.498545963Z E1014 15:42:14.496685       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:44:30.579589659Z E1014 15:44:30.577696       1 watcher.go:189] parsing pod gateway-service-6688f56df8-nqtm4 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:44:30.664416717Z E1014 15:44:30.662834       1 watcher.go:189] parsing pod worker-service-56f68584dc-mpzpj ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:44:35.890327988Z E1014 15:44:35.888525       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:44:35.980505494Z E1014 15:44:35.978593       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:50:44.990388222Z E1014 15:50:44.986650       1 watcher.go:189] parsing pod gateway-service-6699c989c4-8grr6 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:50:45.313265751Z E1014 15:50:45.311641       1 watcher.go:189] parsing pod worker-service-654c7f5f45-s6g8k ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:50:51.381392368Z E1014 15:50:51.378640       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:50:51.443685090Z E1014 15:50:51.442579       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:51:34.295509458Z E1014 15:51:34.293681       1 watcher.go:189] parsing pod gateway-service-787f498766-f8jv2 ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:34.370438661Z E1014 15:51:34.367718       1 watcher.go:189] containers not ready in pod: worker-service-d75b8bf9f-nsfcj
+2026-10-14T15:51:34.639642328Z E1014 15:51:34.638496       1 watcher.go:189] parsing pod worker-service-d75b8bf9f-nsfcj ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:39.881383326Z E1014 15:51:39.880695       1 watcher.go:189] containers not ready in pod: gateway-service-7d695d96b4-d4695
+2026-10-14T15:51:39.986755213Z E1014 15:51:39.985390       1 watcher.go:189] containers not ready in pod: worker-service-7c75bcfdcc-9flb4
+2026-10-14T15:51:40.106538456Z E1014 15:51:40.105670       1 watcher.go:189] parsing pod gateway-service-7d695d96b4-d4695 ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:40.212500909Z E1014 15:51:40.210632       1 watcher.go:189] parsing pod worker-service-7c75bcfdcc-9flb4 ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:41.079447314Z E1014 15:51:41.077586       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:51:41.208239791Z E1014 15:51:41.206515       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:51:46.135600280Z E1014 15:51:46.134392       1 watcher.go:189] containers not ready in pod: gateway-service-7b8fbfc4f7-p45zr
+2026-10-14T15:51:46.137524510Z E1014 15:51:46.136748       1 watcher.go:189] containers not ready in pod: worker-service-55dd946476-z4gkv
+2026-10-14T15:51:46.373595843Z E1014 15:51:46.371758       1 watcher.go:189] parsing pod gateway-service-7b8fbfc4f7-p45zr ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:46.536444955Z E1014 15:51:46.535457       1 watcher.go:189] parsing pod worker-service-55dd946476-z4gkv ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:47.237542544Z E1014 15:51:47.236700       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:51:47.382271910Z E1014 15:51:47.380743       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:51:52.255351774Z E1014 15:51:52.253348       1 watcher.go:189] containers not ready in pod: gateway-service-8bdd9758-wtp8r
+2026-10-14T15:51:52.544751552Z E1014 15:51:52.543512       1 watcher.go:189] containers not ready in pod: worker-service-68f5f8f5d7-fd5jg
+2026-10-14T15:51:52.625627250Z E1014 15:51:52.624730       1 watcher.go:189] parsing pod gateway-service-8bdd9758-wtp8r ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:52.713529543Z E1014 15:51:52.712324       1 watcher.go:189] parsing pod worker-service-68f5f8f5d7-fd5jg ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:53.397702383Z E1014 15:51:53.396312       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:51:53.532710206Z E1014 15:51:53.530775       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:51:57.772735958Z E1014 15:51:57.770410       1 watcher.go:189] containers not ready in pod: worker-service-5c87bf54fb-2fjkk
+2026-10-14T15:51:57.943488557Z E1014 15:51:57.941741       1 watcher.go:189] containers not ready in pod: gateway-service-5854fbc66c-8dpgh
+2026-10-14T15:51:58.086182163Z E1014 15:51:58.084617       1 watcher.go:189] parsing pod worker-service-5c87bf54fb-2fjkk ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:58.220840807Z E1014 15:51:58.219332       1 watcher.go:189] parsing pod gateway-service-5854fbc66c-8dpgh ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T15:51:58.465609590Z E1014 15:51:58.464415       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:51:58.954728758Z E1014 15:51:58.953134       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:52:04.523739030Z E1014 15:52:04.522484       1 watcher.go:189] could not convert obj: pods
+2026-10-14T15:52:04.590770533Z E1014 15:52:04.589716       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:05.890360093Z E1014 16:28:05.887811       1 watcher.go:189] containers not ready in pod: worker-service-554d58958c-t2mhb
+2026-10-14T16:28:05.890421803Z E1014 16:28:05.888421       1 watcher.go:189] containers not ready in pod: gateway-service-5c47bbd5f4-9r46d
+2026-10-14T16:28:06.079532439Z E1014 16:28:06.078688       1 watcher.go:189] parsing pod worker-service-554d58958c-t2mhb ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:06.179672649Z E1014 16:28:06.178716       1 watcher.go:189] parsing pod gateway-service-5c47bbd5f4-9r46d ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:10.946610774Z E1014 16:28:10.944772       1 watcher.go:189] containers not ready in pod: worker-service-55b9ff4657-jnt2b
+2026-10-14T16:28:10.964373509Z E1014 16:28:10.962770       1 watcher.go:189] containers not ready in pod: gateway-service-66888fdfdd-wfhm4
+2026-10-14T16:28:11.171756831Z E1014 16:28:11.170614       1 watcher.go:189] parsing pod worker-service-55b9ff4657-jnt2b ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:11.367584083Z E1014 16:28:11.366387       1 watcher.go:189] parsing pod gateway-service-66888fdfdd-wfhm4 ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:12.719454175Z E1014 16:28:12.716523       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:12.789752664Z E1014 16:28:12.787312       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:17.054726621Z E1014 16:28:17.053379       1 watcher.go:189] containers not ready in pod: gateway-service-59d9c9d9c8-c5jkv
+2026-10-14T16:28:17.122588095Z E1014 16:28:17.121437       1 watcher.go:189] containers not ready in pod: worker-service-6c9d649b87-2vszj
+2026-10-14T16:28:17.357829593Z E1014 16:28:17.356606       1 watcher.go:189] parsing pod gateway-service-59d9c9d9c8-c5jkv ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:17.538504483Z E1014 16:28:17.537469       1 watcher.go:189] parsing pod worker-service-6c9d649b87-2vszj ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:17.940584891Z E1014 16:28:17.938787       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:18.290729938Z E1014 16:28:18.288743       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:24.370733741Z E1014 16:28:24.368533       1 watcher.go:189] containers not ready in pod: gateway-service-5cf4674b98-rd5wv
+2026-10-14T16:28:24.370810770Z E1014 16:28:24.368602       1 watcher.go:189] containers not ready in pod: worker-service-7c5686b89f-d8r8s
+2026-10-14T16:28:24.657735351Z E1014 16:28:24.656258       1 watcher.go:189] parsing pod gateway-service-5cf4674b98-rd5wv ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:24.910413929Z E1014 16:28:24.908458       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:25.249711722Z E1014 16:28:25.248643       1 watcher.go:189] parsing pod worker-service-7c5686b89f-d8r8s ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:25.317463412Z E1014 16:28:25.315669       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:31.422413754Z E1014 16:28:31.421224       1 watcher.go:189] containers not ready in pod: gateway-service-6fbbc57f9c-kvvq7
+2026-10-14T16:28:31.507708679Z E1014 16:28:31.505653       1 watcher.go:189] containers not ready in pod: worker-service-6bb6d58d58-k8zsl
+2026-10-14T16:28:31.619835881Z E1014 16:28:31.619331       1 watcher.go:189] parsing pod gateway-service-6fbbc57f9c-kvvq7 ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:31.795495605Z E1014 16:28:31.793259       1 watcher.go:189] parsing pod worker-service-6bb6d58d58-k8zsl ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:28:32.480605384Z E1014 16:28:32.479714       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:32.543784273Z E1014 16:28:32.541686       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:38.004123795Z E1014 16:28:38.003419       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:28:38.123375782Z E1014 16:28:38.121754       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:02.014409178Z E1014 16:36:02.011838       1 watcher.go:189] parsing pod worker-service-5c69f64978-4tm8w ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:02.121650420Z E1014 16:36:02.119763       1 watcher.go:189] parsing pod gateway-service-54cffd5c89-thwrb ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:03.187377655Z E1014 16:36:03.185621       1 watcher.go:189] parsing pod gateway-service-54cffd5c89-thwrb ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:03.328393264Z E1014 16:36:03.326405       1 watcher.go:189] parsing pod gateway-service-7d877bb9fc-7sntl ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:08.638158645Z E1014 16:36:08.636410       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:08.707612104Z E1014 16:36:08.705764       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:08.781717371Z E1014 16:36:08.780281       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:09.384590543Z E1014 16:36:09.382439       1 watcher.go:189] parsing pod worker-service-79cd9689c6-mqgpt ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:09.898635856Z E1014 16:36:09.897745       1 watcher.go:189] parsing pod gateway-service-5986b45455-jt5zn ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:10.984552927Z E1014 16:36:10.983387       1 watcher.go:189] parsing pod gateway-service-5986b45455-jt5zn ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:11.095744961Z E1014 16:36:11.094571       1 watcher.go:189] parsing pod gateway-service-cdc867c6c-rnt9b ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:15.774793766Z E1014 16:36:15.773419       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:15.938312818Z E1014 16:36:15.937327       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:17.883783820Z E1014 16:36:17.882531       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:18.162343393Z E1014 16:36:18.158419       1 watcher.go:189] containers not ready in pod: worker-service-68c59f89fd-2rz2w
+2026-10-14T16:36:18.379499650Z E1014 16:36:18.378362       1 watcher.go:189] parsing pod worker-service-68c59f89fd-2rz2w ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:18.891441938Z E1014 16:36:18.890376       1 watcher.go:189] parsing pod gateway-service-959d5576f-zjz6j ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:19.986798268Z E1014 16:36:19.984708       1 watcher.go:189] parsing pod gateway-service-959d5576f-zjz6j ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:20.091449749Z E1014 16:36:20.089465       1 watcher.go:189] parsing pod gateway-service-5c95456bf7-x678z ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:24.247447084Z E1014 16:36:24.245518       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:24.390802179Z E1014 16:36:24.389720       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:26.228381879Z E1014 16:36:26.226673       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:26.881523430Z E1014 16:36:26.880362       1 watcher.go:189] parsing pod worker-service-d69bc8674-hbsfz ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:26.948663920Z E1014 16:36:26.947703       1 watcher.go:189] parsing pod gateway-service-7b9d8ccf49-jmjx8 ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:28.354403295Z E1014 16:36:28.353398       1 watcher.go:189] parsing pod gateway-service-7b9d8ccf49-jmjx8 ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:28.463518053Z E1014 16:36:28.461616       1 watcher.go:189] parsing pod gateway-service-55fcc559df-99gzm ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:32.475317353Z E1014 16:36:32.473786       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:33.579806520Z E1014 16:36:33.577817       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:34.495835588Z E1014 16:36:34.493780       1 watcher.go:189] containers not ready in pod: worker-service-6f454f4889-jmcpm
+2026-10-14T16:36:34.637536916Z E1014 16:36:34.636468       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:34.682754342Z E1014 16:36:34.681672       1 watcher.go:189] parsing pod worker-service-6f454f4889-jmcpm ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:35.094434726Z E1014 16:36:35.093596       1 watcher.go:189] parsing pod gateway-service-6c75fb7d4-4nk7g ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:36.207510558Z E1014 16:36:36.206381       1 watcher.go:189] parsing pod gateway-service-6c75fb7d4-4nk7g ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:36.361610090Z E1014 16:36:36.361257       1 watcher.go:189] parsing pod gateway-service-59c585556-7hnlz ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:36:40.947438608Z E1014 16:36:40.945463       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:41.046469777Z E1014 16:36:41.044794       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:36:41.967419545Z E1014 16:36:41.965826       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:43:37.194551388Z E1014 16:43:37.192430       1 watcher.go:189] containers not ready in pod: worker-service-5db88f48dc-7n4ff
+2026-10-14T16:43:37.204673402Z E1014 16:43:37.203535       1 watcher.go:189] containers not ready in pod: gateway-service-7d9dfccd9b-vgmws
+2026-10-14T16:43:37.373595225Z E1014 16:43:37.370777       1 watcher.go:189] parsing pod worker-service-5db88f48dc-7n4ff ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:43:37.428809591Z E1014 16:43:37.426270       1 watcher.go:189] parsing pod gateway-service-7d9dfccd9b-vgmws ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:43:43.425824421Z E1014 16:43:43.424319       1 watcher.go:189] containers not ready in pod: gateway-service-9d5df7ff7-dl2tq
+2026-10-14T16:43:43.520549260Z E1014 16:43:43.518784       1 watcher.go:189] containers not ready in pod: worker-service-7487694798-rkpjp
+2026-10-14T16:43:43.638685690Z E1014 16:43:43.637472       1 watcher.go:189] parsing pod gateway-service-9d5df7ff7-dl2tq ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:43:43.721638425Z E1014 16:43:43.719828       1 watcher.go:189] parsing pod worker-service-7487694798-rkpjp ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:43:44.398814181Z E1014 16:43:44.397515       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:43:44.464449001Z E1014 16:43:44.462589       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:43:49.286827618Z E1014 16:43:49.285519       1 watcher.go:189] containers not ready in pod: gateway-service-bb574579-dtlkp
+2026-10-14T16:43:49.373339234Z E1014 16:43:49.371681       1 watcher.go:189] containers not ready in pod: worker-service-6869dd594d-kg8fw
+2026-10-14T16:43:49.524552961Z E1014 16:43:49.522614       1 watcher.go:189] parsing pod gateway-service-bb574579-dtlkp ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:43:49.724693986Z E1014 16:43:49.723539       1 watcher.go:189] parsing pod worker-service-6869dd594d-kg8fw ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:43:50.383629289Z E1014 16:43:50.382623       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:43:50.475765487Z E1014 16:43:50.474504       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:43:55.883434103Z E1014 16:43:55.881519       1 watcher.go:189] containers not ready in pod: gateway-service-846958b87c-qphk4
+2026-10-14T16:43:55.907703305Z E1014 16:43:55.906643       1 watcher.go:189] containers not ready in pod: worker-service-d56847794-trxm7
+2026-10-14T16:43:56.229513815Z E1014 16:43:56.228522       1 watcher.go:189] parsing pod gateway-service-846958b87c-qphk4 ns-thrift ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:43:56.360787845Z E1014 16:43:56.359662       1 watcher.go:189] parsing pod worker-service-d56847794-trxm7 ns-thrift ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:43:56.948700625Z E1014 16:43:56.947267       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:43:57.374235635Z E1014 16:43:57.372789       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:44:01.963465546Z E1014 16:44:01.956461       1 watcher.go:189] containers not ready in pod: gateway-service-594457555d-kp9zm
+2026-10-14T16:44:02.167675531Z E1014 16:44:02.166577       1 watcher.go:189] containers not ready in pod: worker-service-7d79b9c95f-qvgq5
+2026-10-14T16:44:02.401473524Z E1014 16:44:02.398812       1 watcher.go:189] parsing pod gateway-service-594457555d-kp9zm ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:44:02.579690857Z E1014 16:44:02.578748       1 watcher.go:189] parsing pod worker-service-7d79b9c95f-qvgq5 ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-14T16:44:02.710636444Z E1014 16:44:02.707671       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:44:02.943570870Z E1014 16:44:02.942630       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:44:11.808463208Z E1014 16:44:11.807433       1 watcher.go:189] could not convert obj: pods
+2026-10-14T16:44:11.873245101Z E1014 16:44:11.871580       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:08:10.895606823Z E1019 07:08:10.893626       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:08:10.953617947Z E1019 07:08:10.952518       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:09:35.274448421Z E1019 07:09:35.273431       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:09:35.762518110Z E1019 07:09:35.761697       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:09:35.833472691Z E1019 07:09:35.831481       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:09:36.059679248Z E1019 07:09:36.058593       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:09:36.266400233Z E1019 07:09:36.264589       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:09:36.329783621Z E1019 07:09:36.328679       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:09:36.402536300Z E1019 07:09:36.400726       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:09:36.466507696Z E1019 07:09:36.464565       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:21:16.553607629Z E1019 07:21:16.551554       1 watcher.go:189] containers not ready in pod: worker-service-77bb8d7fd9-qffw7
+2026-10-19T07:21:16.785633764Z E1019 07:21:16.782707       1 watcher.go:189] parsing pod worker-service-77bb8d7fd9-qffw7 ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:21:16.863456710Z E1019 07:21:16.861736       1 watcher.go:189] parsing pod gateway-service-7f6f8fbff5-vnlwt ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:21:18.367270427Z E1019 07:21:18.365694       1 watcher.go:189] parsing pod worker-service-74b69448cd-6twwx ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:21:19.415499018Z E1019 07:21:19.412654       1 watcher.go:189] containers not ready in pod: gateway-service-695cbcdd66-cp9j6
+2026-10-19T07:21:19.591786343Z E1019 07:21:19.590668       1 watcher.go:189] parsing pod gateway-service-695cbcdd66-cp9j6 ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:21:21.101432985Z E1019 07:21:21.098713       1 watcher.go:189] containers not ready in pod: worker-service-5c496848bf-knrnh
+2026-10-19T07:21:21.275496978Z E1019 07:21:21.273759       1 watcher.go:189] parsing pod worker-service-5c496848bf-knrnh ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:21:21.999550908Z E1019 07:21:21.998487       1 watcher.go:189] containers not ready in pod: gateway-service-69bfb8788-ll86c
+2026-10-19T07:21:22.163715459Z E1019 07:21:22.161625       1 watcher.go:189] parsing pod gateway-service-69bfb8788-ll86c ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:21:23.529531249Z E1019 07:21:23.528466       1 watcher.go:189] parsing pod worker-service-6bb89477f9-wnl4z ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:21:24.258541847Z E1019 07:21:24.256775       1 watcher.go:189] containers not ready in pod: gateway-service-7f78558b87-tlczs
+2026-10-19T07:21:24.444809225Z E1019 07:21:24.443318       1 watcher.go:189] parsing pod gateway-service-7f78558b87-tlczs ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:38:11.999368628Z E1019 07:38:11.997781       1 watcher.go:189] containers not ready in pod: gateway-service-9cdcd5ff9-6jn85
+2026-10-19T07:38:12.114344019Z E1019 07:38:12.112805       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:38:12.168610723Z E1019 07:38:12.167555       1 watcher.go:189] parsing pod gateway-service-9cdcd5ff9-6jn85 ns-json ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:38:22.142720477Z E1019 07:38:22.141675       1 watcher.go:189] containers not ready in pod: gateway-service-765ff9fb9d-mjwfx
+2026-10-19T07:38:22.475520072Z E1019 07:38:22.473469       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:38:22.568614736Z E1019 07:38:22.567609       1 watcher.go:189] parsing pod gateway-service-765ff9fb9d-mjwfx ns-msgpack ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:38:31.983497517Z E1019 07:38:31.981642       1 watcher.go:189] parsing pod gateway-service-74b659f7d4-vwrjb ns-grpc ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:38:32.434740117Z E1019 07:38:32.433605       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:38:41.119597912Z E1019 07:38:41.117764       1 watcher.go:189] parsing pod gateway-service-8dbd8c68c-zdjnp ns-flatbuffers ContainerStatuses issue : container gateway did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:38:41.927721189Z E1019 07:38:41.925804       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:39:44.166647820Z E1019 07:39:44.164684       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:39:46.990742050Z E1019 07:39:46.988692       1 watcher.go:189] parsing pod worker-service-77bb8d7fd9-pdsv9 ns-json ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:39:57.346449217Z E1019 07:39:57.345273       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:40:00.040571015Z E1019 07:40:00.039476       1 watcher.go:189] parsing pod worker-service-74b69448cd-hn2f7 ns-msgpack ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:40:10.527695061Z E1019 07:40:10.526662       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:40:14.332810162Z E1019 07:40:14.331727       1 watcher.go:189] parsing pod worker-service-5c496848bf-zpspm ns-grpc ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
+2026-10-19T07:42:50.000793443Z E1019 07:42:49.999682       1 watcher.go:189] could not convert obj: pods
+2026-10-19T07:42:53.091130198Z E1019 07:42:53.090403       1 watcher.go:189] parsing pod worker-service-6bb89477f9-mz6kn ns-flatbuffers ContainerStatuses issue : container worker did not start yet status, InitContainerStatuses issue :<nil>, EphemeralContainerStatuses issue :<nil>
