@@ -4,12 +4,14 @@ Uses gevent in the Locust container with requests or stdlib http.client;
 NOT Locust histogram statistics. --client selects the adapter; neither is
 assumed to have adequate capacity before calibration.
 Closed loop, 1-5 ms think time. Warm-up connections are retained across a brief
-snapshot barrier. Counter windows bracket load, not perfectly simultaneous.
+settling interval. Parallel counter reads bracket load with recorded timing
+uncertainty. Tail sensitivity is reported without claiming lag correction.
 Kepler values are unvalidated model estimates with exporter update lag.
 --users is TOTAL across --processes. Clients use a shared future start epoch;
 all run on the same k3d VM clock. This is a capacity diagnostic, not final energy accounting.
 """
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import csv
 import hashlib
 import json
@@ -65,6 +67,7 @@ import gevent, time, json, sys, random, resource, select, os
 users=int(sys.argv[1]); warm=float(sys.argv[2]); duration=float(sys.argv[3])
 index=int(sys.argv[4]); processes=int(sys.argv[5]); offset=int(sys.argv[6])
 client_kind=sys.argv[7]
+idle_control=(sys.argv[8]=="idle")
 rngs=[random.Random(731+offset+i) for i in range(users)]
 cancelled=False
 warm_attempts=0; warm_failures=0
@@ -75,7 +78,7 @@ rows=[]
 def work(i, end, collect):
     global warm_attempts, warm_failures
     s=sessions[i]
-    while not cancelled and time.perf_counter()<end:
+    while not cancelled and time.perf_counter()<(end() if callable(end) else end):
         start=time.perf_counter(); wall=time.time(); code=0; error=""; ok=False
         try:
             code,body=s.fetch()
@@ -90,11 +93,14 @@ def work(i, end, collect):
         gevent.sleep(rngs[i].uniform(.001,.005))
 # Ramp at 30 users/s, then allow the FULL warm-up period at target concurrency.
 rate=30.0/processes
-end=time.perf_counter()+users/rate+warm
+warm_deadline=[float("inf")]
 green=[]
 for i in range(users):
-    green.append(gevent.spawn(work,i,end,False)); gevent.sleep(1/rate)
+    green.append(gevent.spawn(work,i,lambda:warm_deadline[0],False)); gevent.sleep(1/rate)
+full_concurrency_epoch=time.time()
+warm_deadline[0]=time.perf_counter()+warm
 gevent.joinall(green,raise_error=True)
+warmup_drained_epoch=time.time()
 print("READY",flush=True)
 signal=json.loads(sys.stdin.readline())
 if signal.get("command")!="GO": raise RuntimeError("missing start signal")
@@ -113,8 +119,12 @@ def watch_disconnect():
             raise RuntimeError("unexpected input during measurement")
         gevent.sleep(.1)
 watcher=gevent.spawn(watch_disconnect)
-green=[gevent.spawn(work,i,target_monotonic+duration,True) for i in range(users)]
-gevent.joinall(green,raise_error=True)
+if idle_control:
+    gevent.sleep(max(0,target_monotonic+duration-time.perf_counter()))
+    green=[]
+else:
+    green=[gevent.spawn(work,i,target_monotonic+duration,True) for i in range(users)]
+    gevent.joinall(green,raise_error=True)
 t1=time.perf_counter(); end_epoch=time.time(); cpu1=time.process_time()
 watcher.kill()
 if cancelled: raise RuntimeError("host disconnected")
@@ -126,9 +136,10 @@ if client_kind=="requests":
     import requests
     requests_version=requests.__version__
 for session in sessions:session.close()
-print(json.dumps({"rows":rows,"http_client":client_kind,"python_version":sys.version,"process_index":index,"users":users,"start_epoch":epoch,
+print(json.dumps({"rows":rows,"idle_control":idle_control,"http_client":client_kind,"python_version":sys.version,"process_index":index,"users":users,"start_epoch":epoch,
  "target_start_epoch":target_epoch,"start_lateness_ms":(epoch-target_epoch)*1000,
- "end_epoch":end_epoch,"warmup_attempts":warm_attempts,"warmup_failures":warm_failures,"admission_seconds":duration,
+ "end_epoch":end_epoch,"full_concurrency_epoch":full_concurrency_epoch,
+ "warmup_drained_epoch":warmup_drained_epoch,"warmup_attempts":warm_attempts,"warmup_failures":warm_failures,"admission_seconds":duration,
  "elapsed_with_drain":t1-t0,"client_cpu_seconds":cpu1-cpu0,
  "client_maxrss_kib":resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
  "requests_version":requests_version,"gevent_version":gevent.__version__}),flush=True)
@@ -214,6 +225,40 @@ def aggregate_clients(data):
             'client_maxrss_kib_sum':sum(d['client_maxrss_kib'] for d in data),
             'start_skew_ms':skew,'warmup_failures':sum(d['warmup_failures'] for d in data)}
 
+def collect_boundary(ns,pods,url):
+    """Independent counter reads in parallel; each retains an uncertainty interval."""
+    names=['gateway-service','worker-service','loadgenerator']
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        cpu={name:pool.submit(cpu_snapshot,ns,pods[name]) for name in names}
+        energy=pool.submit(scrape,url)
+        return {'cpu':{name:f.result() for name,f in cpu.items()},'energy':energy.result()}
+
+def energy_delta(before,after,ns,expected):
+    x=energy_series(before['text'],ns,expected);y=energy_series(after['text'],ns,expected)
+    if x.keys()!=y.keys():raise RuntimeError('Energy identities changed')
+    if any(y[k]<x[k] for k in x):raise RuntimeError('Energy counter reset')
+    return sum(y[k]-x[k] for k in x)
+
+def boundary_diagnostics(before,after,process_data,rows):
+    start=min(d['start_epoch'] for d in process_data)
+    end=max(d['end_epoch'] for d in process_data)
+    result={'request_admission_seconds':process_data[0]['admission_seconds'],
+            'client_phase_start_epoch':start,'client_phase_end_with_drain_epoch':end,
+            'first_request_start_epoch':min((r[0] for r in rows),default=None),
+            'last_request_completion_epoch':max((r[0]+r[3]/1000 for r in rows),default=None),
+            'counter_read_intervals':{}}
+    for name in ['gateway-service','worker-service','loadgenerator','energy']:
+        b=before['energy'] if name=='energy' else before['cpu'][name]
+        e=after['energy'] if name=='energy' else after['cpu'][name]
+        result['counter_read_intervals'][name]={
+          'start_read_begin_offset_s':b['begin']['epoch']-start,
+          'start_read_end_offset_s':b['end']['epoch']-start,
+          'end_read_begin_offset_s':e['begin']['epoch']-end,
+          'end_read_end_offset_s':e['end']['epoch']-end,
+          'counter_interval_duration_lower_s':e['begin']['epoch']-b['end']['epoch'],
+          'counter_interval_duration_upper_s':e['end']['epoch']-b['begin']['epoch']}
+    return result
+
 def run(a,ns,folder):
     folder.mkdir(parents=True)
     pods=select_pods(ns)
@@ -252,7 +297,7 @@ def run(a,ns,folder):
             output=log.open('w');errlog=err.open('w')
             args=['kubectl','-n',ns,'exec','-i',pods['loadgenerator']['metadata']['name'],
                   '--','python3','-u','-c',REMOTE,str(users),str(a.warmup),str(a.seconds),
-                  str(i),str(a.processes),str(offset),a.client]
+                  str(i),str(a.processes),str(offset),a.client,'idle' if a.idle_control else 'load']
             proc=subprocess.Popen(args,stdin=subprocess.PIPE,stdout=output,stderr=errlog,text=True)
             clients.append({'proc':proc,'log':log,'output':output,'errlog':errlog})
             offset+=users
@@ -271,18 +316,43 @@ def run(a,ns,folder):
             raise RuntimeError(f'Timed out waiting for all clients: {word}')
         print(f'{ns}: {a.processes} processes, {a.users} TOTAL users; ramp and warm-up',flush=True)
         marker_all('READY',a.warmup+a.users/30+90)
-        before={app:cpu_snapshot(ns,pods[app]) for app in ['gateway-service','worker-service','loadgenerator']}
-        e0=scrape(a.energy_url)
+        # All warm-up requests have drained before READY. This fixed idle guard
+        # lets delayed updates arrive; it is NOT proof the exporter has settled.
+        settling_begin=clock(); settling_initial=scrape(a.energy_url)
+        print(f'{ns}: observing {a.settle:g}s after warm-up (no client requests)',flush=True)
+        stop.wait(a.settle)
+        settling_final=scrape(a.energy_url); settling_end=clock()
+        dump(folder/'settling.json',{'begin':settling_begin,'end':settling_end,
+             'energy_initial':settling_initial,'energy_final':settling_final})
         go=clock(); target_epoch=go['epoch']+a.start_lead
         for c in clients:
             c['proc'].stdin.write(json.dumps({'command':'GO','start_epoch':target_epoch})+'\n')
             c['proc'].stdin.flush()
-        print(f'{ns}: measuring {a.seconds:g}s after shared scheduled start',flush=True)
-        marker_all('DONE',a.start_lead+a.seconds+45)
-        done=clock(); e1=scrape(a.energy_url)
-        after={app:cpu_snapshot(ns,pods[app]) for app in ['gateway-service','worker-service','loadgenerator']}
-        time.sleep(6)
-        dump(folder/'energy-post-drain.json',scrape(a.energy_url))
+        # Read near the common future start, not before the entire start lead.
+        wait=max(0,target_epoch-a.snapshot_lead-time.time())
+        stop.wait(wait)
+        boundary0=collect_boundary(ns,pods,a.energy_url)
+        before=boundary0['cpu'];e0=boundary0['energy']
+        dump(folder/'boundary-before.json',boundary0)
+        if max([v['end']['epoch'] for v in before.values()]+[e0['end']['epoch']])>=target_epoch:
+            raise RuntimeError('Start snapshots overlapped scheduled load. Increase --snapshot-lead and --start-lead.')
+        print(f'{ns}: measuring {a.seconds:g}s (idle control={a.idle_control})',flush=True)
+        marker_all('DONE',a.seconds+a.start_lead+45)
+        done=clock(); tail_origin=time.monotonic()
+        boundary1=collect_boundary(ns,pods,a.energy_url)
+        after=boundary1['cpu'];e1=boundary1['energy']
+        dump(folder/'boundary-after.json',boundary1)
+        # Retain independent endpoint candidates, never silently choose a tail
+        # or assume its entire increase belongs to measured requests.
+        tail_samples=[{'target_offset_s':0,'actual_offset_s':e1['end']['monotonic']-tail_origin,'sample':e1}]
+        offsets=sorted(set([min(3.,a.tail),min(6.,a.tail),min(9.,a.tail),a.tail]))
+        for offset_s in offsets:
+            stop.wait(max(0,tail_origin+offset_s-time.monotonic()))
+            sample=scrape(a.energy_url)
+            tail_samples.append({'target_offset_s':offset_s,
+                'actual_offset_s':sample['end']['monotonic']-tail_origin,'sample':sample})
+        dump(folder/'energy-tail-samples.json',tail_samples)
+        dump(folder/'energy-post-drain.json',tail_samples[-1]['sample'])
         for c in clients:
             c['proc'].stdin.write('EXPORT\n');c['proc'].stdin.flush()
         process_data=[];rows=[]
@@ -304,34 +374,49 @@ def run(a,ns,folder):
         final=select_pods(ns);dump(folder/'pods-after.json',final)
         for app in pods:
             if identity(pods[app])!=identity(final[app]): raise RuntimeError(f'{app} restarted or changed')
-        ev0=energy_series(e0['text'],ns,expected);ev1=energy_series(e1['text'],ns,expected)
-        if ev0.keys()!=ev1.keys(): raise RuntimeError('Energy series identities changed')
-        if any(ev1[k]<ev0[k] for k in ev0): raise RuntimeError('Energy counter reset')
+        energy=energy_delta(e0,e1,ns,expected)
+        sensitivity=[]
+        for sample in tail_samples:
+            delta=energy_delta(e0,sample['sample'],ns,expected)
+            sensitivity.append({'target_tail_seconds':sample['target_offset_s'],
+                'actual_tail_seconds':sample['actual_offset_s'],
+                'raw_estimated_joules_from_start_snapshot':delta,
+                'increase_over_immediate_joules':delta-energy,
+                'increase_over_immediate_percent':100*(delta-energy)/energy if energy>0 else None})
+        diagnostics=boundary_diagnostics(boundary0,boundary1,process_data,rows)
+        dump(folder/'window-diagnostics.json',diagnostics)
+        dump(folder/'energy-sensitivity.json',{'candidates':sensitivity,
+            'selected_final_energy_joules':None,
+            'interpretation':'Raw endpoint sensitivity only. Exporter lag, idle drift, and measurement overhead are not separable from these observations alone.'})
         cpu=0;throttle=0
         for app in ['gateway-service','worker-service']:
             b=before[app]['values'];e=after[app]['values']
             if e['usage_usec']<b['usage_usec']: raise RuntimeError('CPU counter reset')
             cpu+=(e['usage_usec']-b['usage_usec'])/1e6
             throttle+=e.get('nr_throttled',0)-b.get('nr_throttled',0)
-        ok=[r[3] for r in rows if r[5]];energy=sum(ev1[k]-ev0[k] for k in ev0)
-        summary={'namespace':ns,'http_client':a.client,'users_total':a.users,'client_processes':a.processes,'purpose':'diagnostic_pilot_not_main_dataset',**data,
+        ok=[r[3] for r in rows if r[5]]
+        summary={'namespace':ns,'http_client':a.client,'idle_control':a.idle_control,'users_total':a.users,'client_processes':a.processes,'runner_revision':'window-alignment-v1','purpose':'diagnostic_pilot_not_main_dataset',**data,
          'attempts':len(rows),'successes':len(ok),'failures':len(rows)-len(ok),
          'successful_rps_with_drain':len(ok)/data['elapsed_with_drain'],
          'p99_success_ms_nearest_rank':percentile(ok,.99),
          'cpu_seconds_gateway_worker':cpu,'estimated_dynamic_joules_gateway_worker':energy,
+         'energy_estimate_status':'raw_immediate_endpoint_delta_not_final_PSI_input',
+         'settling_seconds':a.settle,'tail_observation_seconds':a.tail,
+         'tail_increase_percent':sensitivity[-1]['increase_over_immediate_percent'],
          'cpu_seconds_per_success':cpu/len(ok) if ok else None,
          'estimated_joules_per_success':energy/len(ok) if ok else None,
          'delta_nr_throttled':throttle,'scrape_errors':list(errors),
          'loadgenerator_cpu_seconds_cgroup':(after['loadgenerator']['values']['usage_usec']-before['loadgenerator']['values']['usage_usec'])/1e6,
          'loadgenerator_delta_nr_throttled':after['loadgenerator']['values'].get('nr_throttled',0)-before['loadgenerator']['values'].get('nr_throttled',0),
          'limitations':['Energy estimator not independently validated; active weights unresolved',
-          'Serial counter snapshots bracket traffic and include collection overhead',
+          'Parallel counter reads still bracket traffic and include exec/collection overhead',
           'Kepler exporter update lag remains to be assessed from time series',
-          'Brief idle barrier after warm-up; CPU reads via exec perturb workload scope',
+          'Idle guard interrupts warm-up load; steady-state re-establishment is not proven',
           'Closed-loop gevent client; client capacity not yet established',
           'Parent cgroup quotas and shared physical host not controlled']}
         dump(folder/'summary.json',summary)
         print(json.dumps(summary,indent=2),flush=True)
+        print('Energy deltas are raw diagnostic estimates; no final PSI energy input has been selected.',flush=True)
     finally:
         for c in clients:
             proc=c['proc']
@@ -354,15 +439,20 @@ def main():
     p.add_argument('--client',choices=['requests','httpclient'],default='requests',help='requests baseline or lower-level stdlib HTTP client')
     p.add_argument('--processes',type=int,default=1,help='Independent clients; --users is TOTAL across them')
     p.add_argument('--start-lead',type=float,default=3,help='Seconds before shared scheduled start')
+    p.add_argument('--snapshot-lead',type=float,default=1.5,help='Start parallel snapshots this many seconds before load')
+    p.add_argument('--settle',type=float,default=12,help='Fixed idle observation after warm-up; not a guarantee of settled exporter')
+    p.add_argument('--tail',type=float,default=12,help='Post-load energy observation seconds')
+    p.add_argument('--idle-control',action='store_true',help='Warm up normally, then omit measured requests to observe background/counter overhead')
     p.add_argument('--warmup',type=float,default=30);p.add_argument('--seconds',type=float,default=120)
     p.add_argument('--energy-url',default='http://127.0.0.1:19102/metrics')
     p.add_argument('--scrape-interval',type=float,default=2)
     p.add_argument('--output',default='pilot-results');p.add_argument('--seed',type=int,default=731)
     a=p.parse_args()
-    if min(a.repeats,a.users,a.processes,a.warmup,a.seconds,a.scrape_interval,a.start_lead)<=0:p.error('numeric settings must be positive')
+    if min(a.repeats,a.users,a.processes,a.warmup,a.seconds,a.scrape_interval,a.start_lead,a.snapshot_lead,a.settle,a.tail)<=0:p.error('numeric settings must be positive')
+    if a.start_lead<=a.snapshot_lead:p.error('--start-lead must exceed --snapshot-lead')
     if a.processes>a.users:p.error('--processes cannot exceed total users')
-    root=Path(a.output)/(time.strftime('%Y%m%d-%H%M%S')+f'-{a.client}-p{a.processes}-'+str(time.time_ns()%1000000));root.mkdir(parents=True,exist_ok=False)
-    dump(root/'settings.json',vars(a))
+    root=Path(a.output)/(time.strftime('%Y%m%d-%H%M%S')+f'-{a.client}-p{a.processes}-'+('idle-' if a.idle_control else 'load-')+str(time.time_ns()%1000000));root.mkdir(parents=True,exist_ok=False)
+    dump(root/'settings.json',{**vars(a),'runner_revision':'window-alignment-v1'})
     (root/'runner.sha256').write_text(hashlib.sha256(Path(__file__).read_bytes()).hexdigest()+'\n')
     rng=random.Random(a.seed);order=[]
     for block in range(1,a.repeats+1):
