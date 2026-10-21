@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Diagnostic pilot only; no deployment mutations. Python 3 stdlib on the host.
-Uses requests/gevent already in the Locust container, NOT Locust histogram stats.
+Uses gevent in the Locust container with requests or stdlib http.client;
+NOT Locust histogram statistics. --client selects the adapter; neither is
+assumed to have adequate capacity before calibration.
 Closed loop, 1-5 ms think time. Warm-up connections are retained across a brief
 snapshot barrier. Counter windows bracket load, not perfectly simultaneous.
 Kepler values are unvalidated model estimates with exporter update lag.
@@ -21,20 +23,54 @@ import threading
 import time
 import urllib.request
 
+CLIENT_ADAPTER = r'''
+# Each virtual user owns one persistent client; no automatic retry or redirect.
+# Both adapters use identical explicit request headers and read the full body.
+import http.client
+CLIENT_HEADERS = {"User-Agent":"psi-pilot/2", "Accept":"*/*", "Accept-Encoding":"identity"}
+class PilotHTTPClient:
+    def __init__(self, kind, host="gateway-service", port=80):
+        self.kind=kind; self.host=host; self.port=port
+        if kind=="requests":
+            import requests
+            self.client=requests.Session()
+            self.client.trust_env=False
+            self.client.headers.clear()
+        elif kind=="httpclient":
+            self.client=http.client.HTTPConnection(host,port,timeout=15)
+        else: raise ValueError("unknown client")
+    def fetch(self):
+        try:
+            if self.kind=="requests":
+                r=self.client.get("http://%s:%s/checkout"%(self.host,self.port),
+                                  headers=CLIENT_HEADERS,timeout=15,allow_redirects=False)
+                try: return r.status_code,r.content
+                finally:r.close()
+            self.client.request("GET","/checkout",headers=CLIENT_HEADERS)
+            r=self.client.getresponse()
+            try:return r.status,r.read()
+            finally:r.close()
+        except Exception:
+            # Discard uncertain connection state. Do NOT retry this request.
+            self.client.close()
+            raise
+    def close(self):self.client.close()
+'''
+
 REMOTE = r'''
 from gevent import monkey
 monkey.patch_all()
-import gevent, requests, time, json, sys, random, resource, select, os
+import gevent, time, json, sys, random, resource, select, os
+# CLIENT_ADAPTER_INSERT
 users=int(sys.argv[1]); warm=float(sys.argv[2]); duration=float(sys.argv[3])
 index=int(sys.argv[4]); processes=int(sys.argv[5]); offset=int(sys.argv[6])
+client_kind=sys.argv[7]
 rngs=[random.Random(731+offset+i) for i in range(users)]
 cancelled=False
 warm_attempts=0; warm_failures=0
-sessions=[requests.Session() for _ in range(users)]
-for s in sessions: s.trust_env=False
-url="http://gateway-service/checkout"
-r=sessions[0].get(url,timeout=15)
-assert r.status_code==200 and r.content==b"OK", "readiness failed"
+sessions=[PilotHTTPClient(client_kind) for _ in range(users)]
+code,body=sessions[0].fetch()
+assert code==200 and body==b"OK", "readiness failed"
 rows=[]
 def work(i, end, collect):
     global warm_attempts, warm_failures
@@ -42,10 +78,10 @@ def work(i, end, collect):
     while not cancelled and time.perf_counter()<end:
         start=time.perf_counter(); wall=time.time(); code=0; error=""; ok=False
         try:
-            r=s.get(url,timeout=15)
-            code=r.status_code; ok=(code==200 and r.content==b"OK")
+            code,body=s.fetch()
+            ok=(code==200 and body==b"OK")
             if not ok: error="status_or_body"
-        except requests.RequestException as e: error=type(e).__name__
+        except Exception as e: error=type(e).__name__
         finish=time.perf_counter()
         if collect: rows.append([wall,start,finish,(finish-start)*1000,code,ok,error])
         else:
@@ -85,13 +121,19 @@ if cancelled: raise RuntimeError("host disconnected")
 print("DONE",flush=True)
 # Hold the process idle while host collects endpoint snapshots.
 if sys.stdin.readline().strip()!="EXPORT": raise RuntimeError("missing export signal")
-print(json.dumps({"rows":rows,"process_index":index,"users":users,"start_epoch":epoch,
+requests_version=None
+if client_kind=="requests":
+    import requests
+    requests_version=requests.__version__
+for session in sessions:session.close()
+print(json.dumps({"rows":rows,"http_client":client_kind,"python_version":sys.version,"process_index":index,"users":users,"start_epoch":epoch,
  "target_start_epoch":target_epoch,"start_lateness_ms":(epoch-target_epoch)*1000,
  "end_epoch":end_epoch,"warmup_attempts":warm_attempts,"warmup_failures":warm_failures,"admission_seconds":duration,
  "elapsed_with_drain":t1-t0,"client_cpu_seconds":cpu1-cpu0,
  "client_maxrss_kib":resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
- "requests_version":requests.__version__,"gevent_version":gevent.__version__}),flush=True)
+ "requests_version":requests_version,"gevent_version":gevent.__version__}),flush=True)
 '''
+REMOTE = REMOTE.replace('# CLIENT_ADAPTER_INSERT', CLIENT_ADAPTER)
 
 def command(args):
     p=subprocess.run(args,text=True,capture_output=True,timeout=45)
@@ -210,7 +252,7 @@ def run(a,ns,folder):
             output=log.open('w');errlog=err.open('w')
             args=['kubectl','-n',ns,'exec','-i',pods['loadgenerator']['metadata']['name'],
                   '--','python3','-u','-c',REMOTE,str(users),str(a.warmup),str(a.seconds),
-                  str(i),str(a.processes),str(offset)]
+                  str(i),str(a.processes),str(offset),a.client]
             proc=subprocess.Popen(args,stdin=subprocess.PIPE,stdout=output,stderr=errlog,text=True)
             clients.append({'proc':proc,'log':log,'output':output,'errlog':errlog})
             offset+=users
@@ -272,7 +314,7 @@ def run(a,ns,folder):
             cpu+=(e['usage_usec']-b['usage_usec'])/1e6
             throttle+=e.get('nr_throttled',0)-b.get('nr_throttled',0)
         ok=[r[3] for r in rows if r[5]];energy=sum(ev1[k]-ev0[k] for k in ev0)
-        summary={'namespace':ns,'users_total':a.users,'client_processes':a.processes,'purpose':'diagnostic_pilot_not_main_dataset',**data,
+        summary={'namespace':ns,'http_client':a.client,'users_total':a.users,'client_processes':a.processes,'purpose':'diagnostic_pilot_not_main_dataset',**data,
          'attempts':len(rows),'successes':len(ok),'failures':len(rows)-len(ok),
          'successful_rps_with_drain':len(ok)/data['elapsed_with_drain'],
          'p99_success_ms_nearest_rank':percentile(ok,.99),
@@ -286,7 +328,7 @@ def run(a,ns,folder):
           'Serial counter snapshots bracket traffic and include collection overhead',
           'Kepler exporter update lag remains to be assessed from time series',
           'Brief idle barrier after warm-up; CPU reads via exec perturb workload scope',
-          'Closed-loop gevent/requests client; client capacity not yet established',
+          'Closed-loop gevent client; client capacity not yet established',
           'Parent cgroup quotas and shared physical host not controlled']}
         dump(folder/'summary.json',summary)
         print(json.dumps(summary,indent=2),flush=True)
@@ -309,6 +351,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--namespaces',nargs='+',choices=['ns-json','ns-grpc'],default=['ns-json'])
     p.add_argument('--repeats',type=int,default=1);p.add_argument('--users',type=int,default=50)
+    p.add_argument('--client',choices=['requests','httpclient'],default='requests',help='requests baseline or lower-level stdlib HTTP client')
     p.add_argument('--processes',type=int,default=1,help='Independent clients; --users is TOTAL across them')
     p.add_argument('--start-lead',type=float,default=3,help='Seconds before shared scheduled start')
     p.add_argument('--warmup',type=float,default=30);p.add_argument('--seconds',type=float,default=120)
@@ -318,7 +361,7 @@ def main():
     a=p.parse_args()
     if min(a.repeats,a.users,a.processes,a.warmup,a.seconds,a.scrape_interval,a.start_lead)<=0:p.error('numeric settings must be positive')
     if a.processes>a.users:p.error('--processes cannot exceed total users')
-    root=Path(a.output)/(time.strftime('%Y%m%d-%H%M%S')+f'-p{a.processes}-'+str(time.time_ns()%1000000));root.mkdir(parents=True,exist_ok=False)
+    root=Path(a.output)/(time.strftime('%Y%m%d-%H%M%S')+f'-{a.client}-p{a.processes}-'+str(time.time_ns()%1000000));root.mkdir(parents=True,exist_ok=False)
     dump(root/'settings.json',vars(a))
     (root/'runner.sha256').write_text(hashlib.sha256(Path(__file__).read_bytes()).hexdigest()+'\n')
     rng=random.Random(a.seed);order=[]
