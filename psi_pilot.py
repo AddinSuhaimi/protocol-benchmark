@@ -272,8 +272,8 @@ def run(a,ns,folder):
         (folder/(app+'-cpu.max')).write_text(quota+'\n')
         if not quota.startswith('max '): raise RuntimeError(f'{app}: CPU quota still set: {quota}')
     env=pods['gateway-service']['spec']['containers'][0].get('env',[])
-    if not any(x['name']=='PAYLOAD_SIZE' and x.get('value')=='10' for x in env):
-        raise RuntimeError('Pilot requires explicit PAYLOAD_SIZE=10')
+    if not any(x['name']=='PAYLOAD_SIZE' and x.get('value')==str(a.payload_size) for x in env):
+        raise RuntimeError(f'Pilot requires explicit PAYLOAD_SIZE={a.payload_size}')
     expected={'gateway':pods['gateway-service']['metadata']['name'],'worker':pods['worker-service']['metadata']['name']}
     initial=scrape(a.energy_url)
     if 'instance="'+pods['worker-service']['spec']['nodeName']+'"' not in initial['text']:
@@ -381,6 +381,7 @@ def run(a,ns,folder):
             sensitivity.append({'target_tail_seconds':sample['target_offset_s'],
                 'actual_tail_seconds':sample['actual_offset_s'],
                 'raw_estimated_joules_from_start_snapshot':delta,
+                'raw_estimated_joules_per_success':delta/len(rows) if rows and all(r[5] for r in rows) else None,
                 'increase_over_immediate_joules':delta-energy,
                 'increase_over_immediate_percent':100*(delta-energy)/energy if energy>0 else None})
         diagnostics=boundary_diagnostics(boundary0,boundary1,process_data,rows)
@@ -395,10 +396,23 @@ def run(a,ns,folder):
             cpu+=(e['usage_usec']-b['usage_usec'])/1e6
             throttle+=e.get('nr_throttled',0)-b.get('nr_throttled',0)
         ok=[r[3] for r in rows if r[5]]
-        summary={'namespace':ns,'http_client':a.client,'idle_control':a.idle_control,'users_total':a.users,'client_processes':a.processes,'runner_revision':'window-alignment-v1','purpose':'diagnostic_pilot_not_main_dataset',**data,
+        summary={'namespace':ns,'http_client':a.client,'idle_control':a.idle_control,'payload_size_items':a.payload_size,'users_total':a.users,'client_processes':a.processes,'runner_revision':'coverage-pilot-v2','purpose':'diagnostic_pilot_not_main_dataset',**data,
          'attempts':len(rows),'successes':len(ok),'failures':len(rows)-len(ok),
          'successful_rps_with_drain':len(ok)/data['elapsed_with_drain'],
+         'mean_success_ms':sum(ok)/len(ok) if ok else None,
          'p99_success_ms_nearest_rank':percentile(ok,.99),
+         'failure_rate':(len(rows)-len(ok))/len(rows) if rows else None,
+         'successful_requests_per_admission_second':len(ok)/a.seconds,
+         'drain_seconds':max(0,data['elapsed_with_drain']-a.seconds),
+         'energy_candidates':sensitivity,
+         'energy_metric_name':'kepler_container_joules_total',
+         'energy_series_labels':[dict(k) for k in energy_series(e0['text'],ns,expected)],
+         'verification_flags':{
+             'no_measured_failures':len(rows)==len(ok),
+             'no_warmup_failures':data['warmup_failures']==0,
+             'no_scrape_errors':not errors,
+             'no_application_throttling':throttle==0,
+             'client_headroom_requires_review':True},
          'cpu_seconds_gateway_worker':cpu,'estimated_dynamic_joules_gateway_worker':energy,
          'energy_estimate_status':'raw_immediate_endpoint_delta_not_final_PSI_input',
          'settling_seconds':a.settle,'tail_observation_seconds':a.tail,
@@ -432,9 +446,29 @@ def run(a,ns,folder):
             c['output'].close();c['errlog'].close()
         stop.set();worker.join(timeout=15)
 
+def make_order(namespaces,repeats,seed,mode='balanced'):
+    """Randomized cycles with equal positions over each complete n-block cycle.
+    Position balance is not a guarantee of first-order carryover balance.
+    """
+    rng=random.Random(seed); order=[]; n=len(namespaces)
+    if not n or len(set(namespaces))!=n:raise ValueError('Need distinct namespaces')
+    for first in range(1,repeats+1,n):
+        base=list(namespaces);rng.shuffle(base)
+        shifts=list(range(n));rng.shuffle(shifts)
+        for j in range(min(n,repeats-first+1)):
+            if mode=='balanced':
+                shift=shifts[j]; sequence=base[shift:]+base[:shift]
+            else:
+                sequence=list(namespaces);rng.shuffle(sequence)
+            order.extend((first+j,ns) for ns in sequence)
+    return order
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--namespaces',nargs='+',choices=['ns-json','ns-grpc'],default=['ns-json'])
+    p.add_argument('--namespaces',nargs='+',choices=['ns-json','ns-msgpack','ns-grpc','ns-flatbuffers'],default=['ns-json'])
+    p.add_argument('--payload-size',type=int,choices=[10,50],default=10,help='Expected deployed PAYLOAD_SIZE; runner does not mutate deployments')
+    p.add_argument('--order',choices=['balanced','shuffle'],default='balanced',help='Balanced position rotations per complete cycle, or legacy independent shuffles')
+    p.add_argument('--plan-only',action='store_true',help='Write settings and run order without contacting Kubernetes')
     p.add_argument('--repeats',type=int,default=1);p.add_argument('--users',type=int,default=50)
     p.add_argument('--client',choices=['requests','httpclient'],default='requests',help='requests baseline or lower-level stdlib HTTP client')
     p.add_argument('--processes',type=int,default=1,help='Independent clients; --users is TOTAL across them')
@@ -450,15 +484,16 @@ def main():
     a=p.parse_args()
     if min(a.repeats,a.users,a.processes,a.warmup,a.seconds,a.scrape_interval,a.start_lead,a.snapshot_lead,a.settle,a.tail)<=0:p.error('numeric settings must be positive')
     if a.start_lead<=a.snapshot_lead:p.error('--start-lead must exceed --snapshot-lead')
+    if len(set(a.namespaces))!=len(a.namespaces):p.error('duplicate namespaces are not allowed')
     if a.processes>a.users:p.error('--processes cannot exceed total users')
     root=Path(a.output)/(time.strftime('%Y%m%d-%H%M%S')+f'-{a.client}-p{a.processes}-'+('idle-' if a.idle_control else 'load-')+str(time.time_ns()%1000000));root.mkdir(parents=True,exist_ok=False)
-    dump(root/'settings.json',{**vars(a),'runner_revision':'window-alignment-v1'})
+    dump(root/'settings.json',{**vars(a),'runner_revision':'coverage-pilot-v2'})
     (root/'runner.sha256').write_text(hashlib.sha256(Path(__file__).read_bytes()).hexdigest()+'\n')
-    rng=random.Random(a.seed);order=[]
-    for block in range(1,a.repeats+1):
-        nslist=list(a.namespaces);rng.shuffle(nslist)
-        order.extend((block,ns) for ns in nslist)
+    order=make_order(a.namespaces,a.repeats,a.seed,a.order)
     dump(root/'run-order.json',order)
+    if a.plan_only:
+        print(f'Plan only; no cluster calls. Evidence: {root}')
+        return 0
     for block,ns in order:
         folder=root/f'block-{block}-{ns}'
         try:run(a,ns,folder)
@@ -468,3 +503,4 @@ def main():
     print(f'Pilot evidence: {root}')
     return 0
 if __name__=='__main__':sys.exit(main())
+
