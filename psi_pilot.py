@@ -59,11 +59,33 @@ class PilotHTTPClient:
     def close(self):self.client.close()
 '''
 
+EXPORTER = r'''
+# Export only after the host has finished all measurement/tail snapshots.
+# Handle short writes explicitly and keep exec alive until the host validates.
+import hashlib
+def write_all(stream, payload):
+    view=memoryview(payload)
+    while view:
+        count=stream.write(view[:65536])
+        if count is None or count<=0:raise RuntimeError("export write made no progress")
+        view=view[count:]
+    stream.flush()
+def export_result(result):
+    payload=json.dumps(result).encode("utf-8")
+    header=("EXPORT_BEGIN %d %s\n"%(len(payload),hashlib.sha256(payload).hexdigest())).encode("ascii")
+    sys.stdout.flush()
+    write_all(sys.stdout.buffer,header)
+    write_all(sys.stdout.buffer,payload)
+    write_all(sys.stdout.buffer,b"\nEXPORT_END\n")
+    if sys.stdin.readline().strip()!="ACK":raise RuntimeError("missing validated export acknowledgement")
+'''
+
 REMOTE = r'''
 from gevent import monkey
 monkey.patch_all()
 import gevent, time, json, sys, random, resource, select, os
 # CLIENT_ADAPTER_INSERT
+# EXPORTER_INSERT
 users=int(sys.argv[1]); warm=float(sys.argv[2]); duration=float(sys.argv[3])
 index=int(sys.argv[4]); processes=int(sys.argv[5]); offset=int(sys.argv[6])
 client_kind=sys.argv[7]
@@ -136,15 +158,56 @@ if client_kind=="requests":
     import requests
     requests_version=requests.__version__
 for session in sessions:session.close()
-print(json.dumps({"rows":rows,"idle_control":idle_control,"http_client":client_kind,"python_version":sys.version,"process_index":index,"users":users,"start_epoch":epoch,
+export_result({"rows":rows,"idle_control":idle_control,"http_client":client_kind,"python_version":sys.version,"process_index":index,"users":users,"start_epoch":epoch,
  "target_start_epoch":target_epoch,"start_lateness_ms":(epoch-target_epoch)*1000,
  "end_epoch":end_epoch,"full_concurrency_epoch":full_concurrency_epoch,
  "warmup_drained_epoch":warmup_drained_epoch,"warmup_attempts":warm_attempts,"warmup_failures":warm_failures,"admission_seconds":duration,
  "elapsed_with_drain":t1-t0,"client_cpu_seconds":cpu1-cpu0,
  "client_maxrss_kib":resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
- "requests_version":requests_version,"gevent_version":gevent.__version__}),flush=True)
+ "requests_version":requests_version,"gevent_version":gevent.__version__})
 '''
-REMOTE = REMOTE.replace('# CLIENT_ADAPTER_INSERT', CLIENT_ADAPTER)
+REMOTE = REMOTE.replace('# CLIENT_ADAPTER_INSERT', CLIENT_ADAPTER).replace('# EXPORTER_INSERT', EXPORTER)
+
+def parse_export(raw):
+    """Return verified result/receipt, or None while a framed export is incomplete."""
+    start=raw.find(b'EXPORT_BEGIN ')
+    if start<0:return None
+    newline=raw.find(b'\n',start)
+    if newline<0:return None
+    fields=raw[start:newline].split()
+    if len(fields)!=3 or not fields[1].isdigit() or not re.fullmatch(b'[0-9a-f]{64}',fields[2]):
+        raise RuntimeError('Malformed client export header')
+    size=int(fields[1]);end=newline+1+size;marker=b'\nEXPORT_END\n'
+    if len(raw)<end+len(marker):return None
+    if raw[end:]!=marker:raise RuntimeError('Client export framing/size mismatch')
+    payload=raw[newline+1:end];actual=hashlib.sha256(payload).hexdigest()
+    if actual!=fields[2].decode('ascii'):raise RuntimeError('Client export checksum mismatch')
+    data=json.loads(payload)
+    if not isinstance(data,dict) or not isinstance(data.get('rows'),list):
+        raise RuntimeError('Invalid client export structure')
+    return data,{'payload_bytes':size,'sha256':actual,'checksum_verified':True}
+
+def collect_exports(clients,timeout=90):
+    """Validate complete files before ACK, rather than treating exec exit as EOF proof."""
+    deadline=time.monotonic()+timeout;pending=set(range(len(clients)));results={};receipts={}
+    sizes={}
+    while pending and time.monotonic()<deadline:
+        for i in list(pending):
+            c=clients[i];size=c['log'].stat().st_size
+            if sizes.get(i)!=size:
+                sizes[i]=size;parsed=parse_export(c['log'].read_bytes())
+                if parsed is not None:
+                    results[i],receipts[i]=parsed
+                    c['proc'].stdin.write('ACK\n');c['proc'].stdin.flush()
+                    pending.remove(i);continue
+            if c['proc'].poll() is not None:
+                raise RuntimeError(f'Client {i} exited before a complete verified export; raw logs retained')
+        if pending:time.sleep(.05)
+    if pending:raise RuntimeError(f'Timed out waiting for verified client exports: {sorted(pending)}')
+    for c in clients:
+        c['proc'].wait(timeout=30)
+        if c['proc'].returncode:raise RuntimeError('Load process failed after export acknowledgement')
+    return [results[i] for i in range(len(clients))],[receipts[i] for i in range(len(clients))]
 
 def command(args):
     p=subprocess.run(args,text=True,capture_output=True,timeout=45)
@@ -355,12 +418,10 @@ def run(a,ns,folder):
         dump(folder/'energy-post-drain.json',tail_samples[-1]['sample'])
         for c in clients:
             c['proc'].stdin.write('EXPORT\n');c['proc'].stdin.flush()
+        exports,receipts=collect_exports(clients)
+        dump(folder/'export-integrity.json',receipts)
         process_data=[];rows=[]
-        for i,c in enumerate(clients):
-            c['proc'].wait(timeout=60)
-            if c['proc'].returncode:raise RuntimeError('Load process failed')
-            lines=c['log'].read_text().splitlines()
-            data=json.loads(next(l for l in reversed(lines) if l.startswith('{')))
+        for i,data in enumerate(exports):
             rr=data.pop('rows');rows.extend([r+[i] for r in rr])
             data['attempts']=len(rr);data['successes']=sum(r[5] for r in rr)
             data['client_cpu_cores']=data['client_cpu_seconds']/data['elapsed_with_drain']
@@ -396,7 +457,7 @@ def run(a,ns,folder):
             cpu+=(e['usage_usec']-b['usage_usec'])/1e6
             throttle+=e.get('nr_throttled',0)-b.get('nr_throttled',0)
         ok=[r[3] for r in rows if r[5]]
-        summary={'namespace':ns,'http_client':a.client,'idle_control':a.idle_control,'payload_size_items':a.payload_size,'users_total':a.users,'client_processes':a.processes,'runner_revision':'coverage-pilot-v2','purpose':'diagnostic_pilot_not_main_dataset',**data,
+        summary={'namespace':ns,'http_client':a.client,'idle_control':a.idle_control,'payload_size_items':a.payload_size,'users_total':a.users,'client_processes':a.processes,'runner_revision':'verified-export-v3','purpose':'diagnostic_pilot_not_main_dataset',**data,
          'attempts':len(rows),'successes':len(ok),'failures':len(rows)-len(ok),
          'successful_rps_with_drain':len(ok)/data['elapsed_with_drain'],
          'mean_success_ms':sum(ok)/len(ok) if ok else None,
@@ -487,7 +548,7 @@ def main():
     if len(set(a.namespaces))!=len(a.namespaces):p.error('duplicate namespaces are not allowed')
     if a.processes>a.users:p.error('--processes cannot exceed total users')
     root=Path(a.output)/(time.strftime('%Y%m%d-%H%M%S')+f'-{a.client}-p{a.processes}-'+('idle-' if a.idle_control else 'load-')+str(time.time_ns()%1000000));root.mkdir(parents=True,exist_ok=False)
-    dump(root/'settings.json',{**vars(a),'runner_revision':'coverage-pilot-v2'})
+    dump(root/'settings.json',{**vars(a),'runner_revision':'verified-export-v3'})
     (root/'runner.sha256').write_text(hashlib.sha256(Path(__file__).read_bytes()).hexdigest()+'\n')
     order=make_order(a.namespaces,a.repeats,a.seed,a.order)
     dump(root/'run-order.json',order)
