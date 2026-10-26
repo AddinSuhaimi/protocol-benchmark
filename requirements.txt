@@ -1,0 +1,6 @@
+# Collection/orchestration: host Python >=3.10 stdlib + kubectl, Linux fcntl.
+# Client pod: existing verified Python/gevent image; no hot-path dependency changes.
+# Offline analysis/tests, versions exercised in this build:
+numpy==2.3.5
+scipy==1.17.0
+matplotlib==3.10.8

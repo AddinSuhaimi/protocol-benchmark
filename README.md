@@ -1,228 +1,172 @@
-## 1. Experimental Purpose
+# Empirical main study — runner and analysis v1
 
-The primary objective of this experimental framework is to empirically quantify the computational tax, microarchitectural efficiency, network throughput, and energy consumption of Layer 7 (L7) serialization protocols in cloud-native microservices.
+This package implements the prospective **128-run** main study. It does not contain new experimental results. Offline tests use explicitly synthetic evidence. Pilot data remain separate calibration evidence.
 
-By benchmarking **JSON**, **MessagePack**, **gRPC / Protocol Buffers**, **Apache Thrift**, and **FlatBuffers**, this methodology provides the empirical foundation to define a novel **Protocol Computational Multiplier ($\mathcal{M}_{\text{protocol}}$)** for Research Objective 1 (RO1 / Paper 1). This metric replaces naive raw volume models (such as MB/s) by formalizing how L7 encoding choices alter host CPU cycle allocation, memory bus utilization, and dynamic energy exhaustion in Kubernetes clusters.
+Four communication protocols × 10/50 logical items × 50/100 total closed-loop users × eight complete macroblocks. Fixed eight gevent/http.client processes; approximately 30 total users/s ramp; 30 s full-concurrency warm-up and warm-up drain; 12 s idle settling; 120 s admission and drain; 0/3/6/9/12 s energy endpoints. The primary energy convention is fixed **+12 s after host-observed drain**, with no idle subtraction. The request adapter, request loop, RNG mapping, synchronization and verified-export-v3 source string are unchanged from the verified base. Collection has a new source hash; the pilot hash does not identify the modified collector.
 
----
+Energy is a **model-estimated padded-batch outcome**, not physical ground truth. Exact active model weights/preprocessing remain unknown. CPU, estimated energy, performance and adverse application outcomes are reported together. CPU/energy dependence and preference substitution are prespecified; CPU is not added as an independent score dimension. Logical item counts are not measured encoded or wire bytes. No encoded-byte outcome is collected.
 
-## 2. Architecture & Role of `main.go`
+## Files
 
-The `main.go` harness acts as the unified, multi-protocol workload binary deployed across all isolated Kubernetes namespaces (`ns-json`, `ns-msgpack`, `ns-grpc`, `ns-thrift`, `ns-flatbuffers`). Its execution path is controlled dynamically at container startup via environment variables (`SERVICE_ROLE`, `PROTOCOL`, and `PAYLOAD_SIZE`).
+- `run_main.py`: plan, read-only freeze, sequential collection, status/resume.
+- `collection_main.py`: validated-client collector successor; immediate summary fields preserved.
+- `validate_run.py`: full client-frame/CSV reconciliation, counter/identity/source checks, explicit +12 s selection.
+- `analyze_main.py`: matched analysis, block intervals, workload interactions, sensitivity, CPU dependence and figures.
+- `study_common.py`: fixed design, hashes, exact metric selection and atomic bookkeeping.
+- `PSI_Main_Study_Order_v0_1.json`: unchanged prespecified schedule.
+- `verified-client-contract.json`: verified base and injected client-source hashes.
+- `model-provenance.json`: bounded historical model evidence, explicit unresolved weights and unavailable physical reference.
+- `test_study.py`, `requirements.txt`, `OFFLINE_VALIDATION.md`, `SHA256SUMS`: offline verification and file integrity.
 
-```
-                         +-----------------------------------+
-                         |         Locust Load Generator     |
-                         +-----------------------------------+
-                                           | HTTP GET /checkout
-                                           v
-+-----------------------------------------------------------------------------------+
-| GATEWAY SERVICE (SERVICE_ROLE=gateway)                                            |
-| 1. Reads PAYLOAD_SIZE (10 or 50 items)                                             |
-| 2. Generates dummy struct -> Serializes via target PROTOCOL                        |
-| 3. Computes wire byte size -> Logs "BENCHMARK_PAYLOAD_BYTES: <bytes>"             |
-| 4. Dispatches serialized bytes over protocol-specific transport (HTTP/1, HTTP/2, TCP)|
-+-----------------------------------------------------------------------------------+
-       |                  |                  |                  |                  |
-   HTTP/1.1            HTTP/1.1            HTTP/2             Raw TCP           HTTP/1.1
-    :8080              :8080               :50051             :9090             :8080
-       |                  |                  |                  |                  |
-       v                  v                  v                  v                  v
-+--------------+   +--------------+   +--------------+   +--------------+   +--------------+
-| JSON Worker  |   | MsgPack Work |   | gRPC Worker  |   | Thrift Work  |   | FlatBuffers  |
-| json.Decode  |   | msgpack.Unm  |   | pb.ProcessOr |   | payload.Read |   | GetUOffsetT  |
-+--------------+   +--------------+   +--------------+   +--------------+   +--------------+
-|                          WORKER SERVICE (SERVICE_ROLE=worker)                     |
-+-----------------------------------------------------------------------------------+
+Keep all package files together. Do not edit code after the campaign freeze. A documented change requires a new freeze/campaign; analysis detects changed source hashes.
 
+## 1. Install and check the package
+
+Extract the downloaded ZIP under `~/protocol-benchmark`; it contains a `psi-main-v1/` directory. It does not replace `psi_pilot.py` or old results.
+
+```bash
+cd ~/protocol-benchmark/psi-main-v1
+sha256sum -c SHA256SUMS
+python3 run_main.py plan
 ```
 
-### Key Components of `main.go`
+`plan` is offline and performs no Kubernetes operations. The manifest hash must be:
 
-1. **Synthetic Data Engine (`generateDummyPayload`)**:
-Constructs a standardized `OrderPayload` struct containing order IDs, user details, and an array of `OrderItem` objects. The array length is parameterized via `PAYLOAD_SIZE` (defaulting to 10 or 50 items), enabling systematic evaluation across payload scale quadrants.
-
-
-2. **Gateway Service (`runGateway`)**:
-* Accepts incoming requests from the load generator on `/checkout`.
-
-
-* Converts `OrderPayload` into target wire bytes for the active protocol.
-
-
-* Tracks the exact serialized wire size (`payloadBytes`) and logs `BENCHMARK_PAYLOAD_BYTES: <bytes>` to `stdout` for automated bash extraction.
-
-
-* Transmits payloads over protocol-matched network layers: HTTP/1.1 POST for JSON, MessagePack, and FlatBuffers; HTTP/2 streams via gRPC; and framed raw TCP sockets for Apache Thrift.
-
-
-
-
-3. **Worker Service (`runWorker`)**:
-Isolates protocol-specific unmarshaling mechanics to isolate CPU cycle overhead:
-
-
-* **JSON (`ns-json`)**: Decodes streaming text directly from HTTP body via `json.NewDecoder`.
-
-
-* **MessagePack (`ns-msgpack`)**: Buffer-unmarshals binary tags via `msgpack.Unmarshal`.
-
-
-* **gRPC / Protobuf (`ns-grpc`)**: Listens on TCP `:50051` over HTTP/2, auto-decoding varints via compiled Protobuf stubs.
-
-
-* **Apache Thrift (`ns-thrift`)**: Listens on TCP `:9090`, reads 4-byte big-endian framing length headers, and unmarshals field tags via `TBinaryProtocolConf` into `thrift_order.OrderPayload`.
-
-
-* **FlatBuffers (`ns-flatbuffers`)**: Reads HTTP body bytes and accesses memory offset tables in-place via `flatbuffers.GetUOffsetT(body)`, achieving zero-copy read access without heap allocations.
-
-
-
-
-
----
-
-## 3. Comprehensive Experiment Methodology
-
-The benchmark methodology uses a $2^2$ factorial design (scaling array items from 10 to 50, and user concurrency from 50 to 150) across five protocol namespaces.
-
-```
-  ==================================================================================
-  PHASE 1: Baseline Initialization
-  --> Query Kepler eBPF metrics for start dynamic Joules (E_start)
-  ==================================================================================
-                                         |
-                                         v
-  ==================================================================================
-  PHASE 2: Wire Payload Size Extraction
-  --> Trigger single request via Python urllib -> Extract BENCHMARK_PAYLOAD_BYTES (B_wire)
-  ==================================================================================
-                                         |
-                                         v
-  ==================================================================================
-  PHASE 3: Workload Generation & Active Sampling Window (120 seconds)
-  --> Locust Headless Engine drives concurrent user load -> Captures total requests (N_req)
-  ----------------------------------------------------------------------------------
-  | Parallel Telemetry Tasks (Terminal 2):                                         |
-  |  a. perf record (45s @ 99Hz)  --> stack collapse --> stack_.folded             |
-  |  b. perf stat   (45s PMU)     --> capture instructions & cycles --> calculate IPC|
-  ----------------------------------------------------------------------------------
-  ==================================================================================
-                                         |
-                                         v
-  ==================================================================================
-  PHASE 4: Metrics Aggregation & Stack Filtering
-  --> Query Kepler end Joules (E_end) --> Calculate Net Joules (Delta E)
-  --> Derive Req/J, MB/J, and IPC
-  --> Apply regex filters to stack_.folded --> Calculate CPU Parsing Tax Ratio (R_parse)
-  ==================================================================================
-
+```text
+770990ea730cf66f5a64d1476983e8bf722163a5494ef90e67fe937816116de9
 ```
 
-### Phase 1: Context Setup & Baseline Energy Capture
+Collection needs Python 3.10+ on Linux and authenticated `kubectl`; its host code uses the standard library. It reuses the existing client Pod's Python/gevent image. Do not install a different client or change the request hot path for this campaign.
 
-1. Identify the active Kepler pod running on host node `agent-0` and establish port-forwarding to local port `:9102`.
+Offline analysis/tests were exercised with Python 3.11 and the versions in `requirements.txt`. Prefer a separate analysis environment; collection does not require these packages:
 
-
-2. Set `TARGET_NS` environment variable to the isolated target namespace (e.g., `ns-json`).
-
-
-3. Query Kepler eBPF metrics endpoint via HTTP GET to record dynamic dynamic package energy consumed prior to load injection ($E_{\text{start}}$):
-
-
-
-$$\text{PromQL / Curl Filter: } \texttt{kepler\_container\_joules\_total\{container\_namespace="\$TARGET\_NS", mode="dynamic"\}}$$
-
-
-
-
-### Phase 2: Automated Wire Payload Size Extraction
-
-1. Dispatch a single 1-shot trigger request from the load generator pod to the Gateway endpoint using Python `urllib`.
-
-
-2. Pause 1 second for container log stream buffer flushing.
-
-
-3. Parse Gateway container logs via `kubectl logs` and extract `BENCHMARK_PAYLOAD_BYTES` to store exact single-request serialized wire size ($B_{\text{wire}}$).
-
-
-
-### Phase 3: Workload Generation & Microarchitectural Profiling
-
-1. **Load Injection**: Launch headless Locust load generator inside the cluster targeting `http://gateway-service/checkout` with random wait intervals ($0.001\text{s} - 0.005\text{s}$) for a 120-second steady state window.
-
-
-2. **CPU Callstack Recording**: Concurrently execute Linux `perf record` at $99\text{ Hz}$ sampling frequency (`-F 99 -g -a`) across all CPUs for 45 seconds. Process raw trace files via `perf script` and collapse callstacks using `stackcollapse-perf.pl` to generate `stack_${TARGET_NS}.folded`.
-
-
-3. **Hardware Counter Sampling**: Concurrently execute Linux `perf stat` for 45 seconds to sample hardware Performance Monitoring Units (PMUs) for raw CPU `instructions` and `cycles`.
-
-
-
-### Phase 4: Energy & Multi-Metric Aggregation
-
-1. Query Kepler metrics endpoint at the end of the load window to record $E_{\text{end}}$.
-
-
-2. Extract total successful processed requests ($N_{\text{req}}$) from Locust runner execution statistics.
-
-
-3. Compute derived metrics via shell arithmetic (`bc`):
-
-
-
-| Metric | Mathematical Derivation / Expression | Purpose |
-| --- | --- | --- |
-| **Net Dynamic Energy ($\Delta E$)** | $\Delta E = E_{\text{end}} - E_{\text{start}} \quad (\text{Joules})$<br> | Macro host dynamic energy draw. |
-| **Workload Energy Efficiency ($\text{Req/J}$)** | $\text{Req/J} = \frac{N_{\text{req}}}{\Delta E}$<br> | Request throughput completed per dynamic Joule. |
-| **Transferred Data Volume ($\text{MB}_{\text{total}}$)** | $\text{MB}_{\text{total}} = \frac{N_{\text{req}} \times B_{\text{wire}}}{1,048,576}$<br> | Total application data transferred. |
-| **Volumetric Energy Efficiency ($\text{MB/J}$)** | $\text{MB/J} = \frac{\text{MB}_{\text{total}}}{\Delta E}$<br> | Data volume processed per dynamic Joule. |
-| **Instructions Per Cycle ($\text{IPC}$)** | $\text{IPC} = \frac{\text{Total CPU Instructions}}{\text{Total CPU Clock Cycles}}$<br> | Microarchitectural execution efficiency. |
-
-### Phase 5: Stack Trace Stack Filtering & CPU Parsing Tax Ratio
-
-Sum total CPU stack samples in `stack_${TARGET_NS}.folded` and apply narrow, protocol-specific regex filters to isolate deserialization callstacks:
-
-$$\mathcal{R}_{\text{parse}} = \left( \frac{\text{Filtered Protocol Deserialization Samples}}{\text{Total CPU Samples}} \right) \times 100\%$$
-
-#### Protocol Regex Filter Rules:
-
-* **JSON (`ns-json`)**: `grep -i -E "encoding/json|json\.\(\*Decoder\)|json\.Unmarshal|jsonparser"`
-
-* **MessagePack (`ns-msgpack`)**: `grep -i -E "vmihailenco/msgpack|msgpack\.\(\*Decoder\)|msgpack\.Unmarshal"`
-
-* **gRPC / Protobuf (`ns-grpc`)**: `grep -i -E "protoimpl|proto\.Unmarshal|protobuf.*Unmarshal|fastReflection"`
-
-* **Apache Thrift (`ns-thrift`)**: `grep -i -E "apache/thrift|TBinaryProtocol|thrift\.\(\*TDecoder\)|binary\.Read"`
-
-* **FlatBuffers (`ns-flatbuffers`)**: `grep -i -E "google/flatbuffers|flatbuffers\.Get|GetUOffsetT"`
-
-
----
-
-## 4. Execution Workflow Summary
-
-```
-+-----------------------------------------------------------------------------------+
-| STEP 1: Deploy Target Quadrant (sed manifest tag -> set PAYLOAD_SIZE=10 or 50)     |
-+-----------------------------------------------------------------------------------+
-                                         |
-                                         v
-+-----------------------------------------------------------------------------------+
-| STEP 2: Execute Master Script for Namespace (ns-json -> ns-flatbuffers)          |
-|  1. Record E_start                                                                |
-|  2. Trigger urllib -> extract B_wire                                              |
-|  3. Run 120s Locust -> run perf record (45s) -> run perf stat (45s)               |
-|  4. Record E_end -> calculate Req/J, MB/J, IPC                                    |
-|  5. Process stackcollapse -> calculate R_parse                                    |
-+-----------------------------------------------------------------------------------+
-                                         |
-                                         v
-+-----------------------------------------------------------------------------------+
-| STEP 3: Aggregate Telemetry into Composite Protocol Weight Matrix (M_protocol)    |
-+-----------------------------------------------------------------------------------+
-
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m unittest -v test_study
 ```
 
-This experimental procedure captures micro-level CPU behavior (IPC, $\mathcal{R}{\text{parse}}$) and macro-level host impact ($\Delta E$, Req/J, MB/J) across all candidate protocols, supplying the analytical rigor required to justify the Protocol Multiplier ($\mathcal{M}_{\text{protocol}}$) metric.
+No tests contact Kubernetes or the telemetry endpoint. The simulated 128-run campaign is not scientific data and is deleted by the tests.
+
+## 2. Keep the application-node exporter available
+
+Run the port-forward inside a persistent tmux window. Reuse an already working forward rather than creating a second one on the same port.
+
+```bash
+kubectl -n kepler get pods -l app.kubernetes.io/name=kepler \
+  --field-selector spec.nodeName=k3d-protocol-benchmark-agent-0 -o wide
+```
+
+Use the single returned Pod name in a tmux window:
+
+```bash
+kubectl -n kepler port-forward pod/REPLACE_WITH_RETURNED_POD_NAME 19102:9102
+```
+
+In the study window:
+
+```bash
+curl --fail --silent --show-error --max-time 10 \
+  --output /dev/null http://127.0.0.1:19102/metrics
+```
+
+The freeze/runner verifies the exact application-node identity from node metric labels, the component estimator/platform-none path, the audited Kepler image digest, and the required current Gateway/Worker series. A forwarded Service that selects another node is not sufficient.
+
+## 3. Freeze before collection
+
+Stop any older pilot/client run. Freeze checks for existing gevent benchmark clients or Locust processes in all four load-generator Pods. This is a cooperative experiment guard, not a guarantee against unrelated activity on the shared VM.
+
+Review `model-provenance.json`. It records the historical bounded audit and **unknown active weights**, not invented calibration. If model files or the deployment changed since the audit, document that change before collection. Known unresolved weights are allowed; a change in runtime source/image/resources is not silently accepted.
+
+```bash
+python3 run_main.py freeze \
+  --output ../main-study-128-v1 \
+  --provenance model-provenance.json
+```
+
+This command is read-only against Kubernetes. It writes a local freeze containing exact package/manifest/provenance hashes, actual container image IDs, container specs/resources, effective `cpu.max`, placements, node information, Kepler specification/source metadata, and a starting metrics snapshot. Unknown active weights and lack of physical calibration remain explicit. The output directory must not already have a freeze.
+
+Expected configuration:
+
+- Gateway and Worker on `k3d-protocol-benchmark-agent-0`; load-generator on `k3d-protocol-benchmark-agent-1`.
+- Gateway/Worker CPU request `250m`, no CPU limit; all three role containers effectively uncapped (`cpu.max` begins `max `).
+- Application image digest `sha256:b7279c2e887f5384b0c259862ea763c31397cc9c237d52eda921db3b7d290c72`.
+- Matching protocol/role/Worker-host environment bindings; equal role resources across the four namespaces.
+- Load-generator digest `sha256:aace7624daa62d895d616f5ccc861a486c742582e1445a1d52d3aae83bbaa614`, rechecked from saved completed coverage metadata.
+- Kepler digest `sha256:1c822681f48d8c6f66a4613987007107322e5320f695c1cd284cef2d343bf24b`.
+
+If a check fails, preserve the error and investigate. Do not bypass a guard just to start collection. Freeze does not prove an absence of parent cgroup quotas or physical-host contention.
+
+## 4. Collect the main dataset
+
+Run in a second tmux window while the port-forward stays in its own window. Collection changes Gateway `PAYLOAD_SIZE` in the four benchmark namespaces when required, waits for each rollout and an end-to-end Worker-validated `OK`, and dispatches exactly one measured run at a time. Other application configuration is verified against the freeze.
+
+```bash
+cd ~/protocol-benchmark/psi-main-v1
+python3 -u run_main.py run --output ../main-study-128-v1 \
+  >> ../main-study-128-v1.log 2>&1
+```
+
+This is the command that starts collection; it was not run against your server while preparing this package. No image rebuild or manifest reapplication is required by this package if the verified deployment is unchanged. Keep sufficient disk space for all raw framed exports and request CSVs: large client exports are expected. The actual campaign can take longer than the earlier 6.5–8 h arithmetic estimate because configuration checks, rollouts, exports and re-audits add overhead.
+
+Progress from another shell:
+
+```bash
+cd ~/protocol-benchmark/psi-main-v1
+python3 run_main.py status --output ../main-study-128-v1
+tail -n 30 ../main-study-128-v1.log
+```
+
+`status` distinguishes accepted macroblocks from attempted/invalid blocks. `events.jsonl` records planned and actual execution; `campaign.json` atomically tracks progress. `main-outcomes.json` records the selected +12 s outcome separately from historical immediate `summary.json` fields. Preserve the entire output directory, freeze, package, and log.
+
+## 5. Interruption and technical failures
+
+A valid adverse application result (HTTP error, timeout, incorrect completion) remains in the accepted block. It is never automatically rerun to obtain success. Conditional successful-request latency and per-completion outcomes are retained, with failure counts. One measured failure makes the protocol/workload cell ineligible for clean comparisons across its planned repetitions.
+
+Missing/corrupt exports, resets, missing endpoints, source/configuration drift, overlapping boundaries, quota/throttling inconsistencies or scrape errors are technical failures. The runner stops and preserves the attempt. It does not continuously rerun on error.
+
+If a session/process is interrupted, the partially completed macroblock is invalidated when the same campaign is resumed. Completed accepted macroblocks are retained; **all 16 runs of the incomplete macroblock** are attempted again in the same prespecified order under a distinct attempt ID. At most two extra macroblock attempts are permitted across the campaign; further replacement requires stopping and documenting a repair/protocol amendment. The cap is not an error-recovery loop.
+
+After diagnosing and repairing a transient issue, resume with the same `run` command. No favorable-value/outlier/ranking/p-value selection is implemented.
+
+Two guards prevent cooperating main-runner instances from overlapping: a local file lock and the `psi-main-study-active` ConfigMap in the `kepler` namespace. Graceful exit removes the ConfigMap; abrupt process/host death may leave it. Before deleting a stale guard, establish that no main or pilot client remains active, inspect its details, and retain the interruption evidence:
+
+```bash
+pgrep -af '[r]un_main.py|[p]si_pilot.py'
+kubectl -n kepler get configmap psi-main-study-active -o yaml
+```
+
+If confirmed stale, remove that named guard, restore the port-forward if needed, and resume:
+
+```bash
+kubectl -n kepler delete configmap psi-main-study-active
+```
+
+The runner also scans client Pods on resume; residual active clients cause a stop rather than overlapping new load. Do not delete a live guard or kill unrelated processes. If access does not permit ConfigMap creation/deletion, preserve the error for a documented guard amendment; do not launch concurrent runs.
+
+## 6. Analyze after collection
+
+Use the exact frozen package. Keep analysis output separate from the campaign evidence directory:
+
+```bash
+cd ~/protocol-benchmark/psi-main-v1
+.venv/bin/python analyze_main.py ../main-study-128-v1 \
+  --output ../main-study-analysis-v1
+```
+
+Default analysis requires eight accepted macroblocks. It independently re-audits all framed exports, merged request rows, counters and identities, then checks that the saved audit matches. This can take time and memory for large runs. It does not overwrite collection evidence. For a stopped campaign, `--partial` creates an explicitly exploratory report; it does not relabel the campaign completed.
+
+Outputs:
+
+- `run-level.csv/.json`: all accepted observations, including failures and undefined values.
+- `analysis.json`: raw run summaries; paired JSON geometric ratios; payload/concurrency/interaction contrasts; pointwise 95% t intervals and whole-macroblock bootstrap sensitivity; fixed-endpoint sensitivity; optional weights 0.25/0.5/0.75 and CiS²-inspired products; point-estimate Pareto sets; within-workload total/per-completion and within-protocol-centered CPU–energy associations; optional BPF matched-scrape comparisons; whole-block-held-out CPU agreement with Kepler output; ranking substitution; technical attempt history.
+- `tradeoffs.png/.svg`, `cpu_energy.png/.svg`: per-workload run-level figures, marked as model estimates.
+- `REPORT.md`: coverage, eligibility and interpretation guide.
+
+A missing/nonpositive JSON reference makes that block's normalized comparison undefined; no epsilon or borrowed reference is used. Zero raw observations remain in arithmetic descriptions; logarithmic summaries are undefined when zeros are present. Undefined/failing cells remain visible. Point estimates do not establish distributional dominance. The script does not declare a universal winner, production SLA compliance, independent physical energy savings, or a novel PSI index. Run-level p99 summaries are not pooled-request p99.
+
+Main-study CPU/energy dependence is recalculated; pilot mappings are not imported. A held-out error quantifies agreement with the estimator's output, **not physical-energy accuracy**. The fixed model estimate can be reported alongside CPU/performance even when the preference rankings are redundant.
+
+## Deployment verification boundary
+
+The package was verified offline. No SSH access, live 120-second trial, new main data, or successful live freeze is claimed. The first server action should be the read-only plan/freeze checks above. Runtime acceptance checks apply to every main run. Any needed alteration to frozen settings is documented before a new campaign rather than silently accepted mid-study.
