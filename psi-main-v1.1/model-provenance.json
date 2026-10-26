@@ -1,0 +1,22 @@
+{
+  "estimator_path": "Historical power-acquisition fallback; runtime components estimator / platform none. Linear regressors and ratio attribution documented in bounded audit.",
+  "active_model_weights": "UNKNOWN: exact active filename, coefficients, feature scaling and preprocessing have not been recovered. Bundled model files do not prove loaded selection.",
+  "physical_reference": "UNAVAILABLE: this VM deployment has not been independently calibrated against physical energy.",
+  "model_files": {
+    "source_artifact": "kepler-model-audit.tar.gz",
+    "source_library_id": "libfile_ac2e83e968348191b42ff3defe3f3d84",
+    "audit_bundle": "Kepler_CPU_Energy_Audit_Bundle.zip",
+    "audit_bundle_library_id": "libfile_f757cd1f7da48191824214684c779ef9",
+    "bundled_files": ["acpi_AbsPowerModel.json", "acpi_DynPowerModel.json", "intel_rapl_AbsPowerModel.json", "intel_rapl_DynPowerModel.json"],
+    "feature_evidence": "Only CPU time has nonzero numerical feature weights in the four inspected bundled files; some domains are zero and biases are present.",
+    "hash_record": "The supplied estimator_provenance.json in Kepler_CPU_Energy_Audit_Bundle.zip contains the inspected file hashes. Those historical artifacts are separate from live model selection."
+  },
+  "limitations": [
+    "Historical provenance does not establish exact live active weights or physical accuracy",
+    "Kepler energy closely tracked CPU in 64 four-process coverage pilots; repeat dependence analysis in main data",
+    "Shared VM / logical k3d nodes; parent cgroup quotas and physical host contention not controlled",
+    "Fixed +12-second padded batch estimate includes background and attribution lag; no idle subtraction",
+    "CPU-only output agreement is not physical-energy validation"
+  ],
+  "operator_note": "Known unresolved weights are explicitly accepted as unknown; do not invent coefficients. Freeze records actual image IDs and runtime source metadata. If deployment/model files changed since the bounded audit, stop and document the change before freezing."
+}

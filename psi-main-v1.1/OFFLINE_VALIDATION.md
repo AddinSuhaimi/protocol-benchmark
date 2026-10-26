@@ -1,0 +1,1 @@
+17 offline tests passed, including generated service-account mount-name normalization and preservation of mount path/read-only differences. Full synthetic campaign and analysis tests passed. No live rerun performed.

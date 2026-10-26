@@ -1,0 +1,46 @@
+test_analysis_known_effects_gating_and_substitution (test_study.StudyTests.test_analysis_known_effects_gating_and_substitution) ... ok
+test_application_failure_is_not_technical_failure (test_study.StudyTests.test_application_failure_is_not_technical_failure) ... ok
+test_complete_campaign_orchestration_and_resume (test_study.StudyTests.test_complete_campaign_orchestration_and_resume) ... ok
+test_end_to_end_analysis_reaudit_and_cli (test_study.StudyTests.test_end_to_end_analysis_reaudit_and_cli) ... ok
+test_frame_checksum_and_truncation (test_study.StudyTests.test_frame_checksum_and_truncation) ... ok
+test_frozen_configuration_drift_rejected (test_study.StudyTests.test_frozen_configuration_drift_rejected) ... ok
+test_full_run_reconciles_primary_and_csv (test_study.StudyTests.test_full_run_reconciles_primary_and_csv) ... ok
+test_generated_mount_name_only_is_ignored (test_study.StudyTests.test_generated_mount_name_only_is_ignored) ... ok
+test_interruption_restarts_whole_macroblock (test_study.StudyTests.test_interruption_restarts_whole_macroblock) ... ok
+test_manifest_and_plan_no_cluster (test_study.StudyTests.test_manifest_and_plan_no_cluster) ... ok
+test_measurement_client_unchanged_from_verified_base (test_study.StudyTests.test_measurement_client_unchanged_from_verified_base) ... ok
+test_payload_rollout_only_changes_when_needed (test_study.StudyTests.test_payload_rollout_only_changes_when_needed) ... ok
+test_protocol_role_binding_and_exact_node_identity (test_study.StudyTests.test_protocol_role_binding_and_exact_node_identity) ... ok
+test_replacement_budget_and_no_application_replacement (test_study.StudyTests.test_replacement_budget_and_no_application_replacement) ... ok
+test_reset_and_duplicate_rejected (test_study.StudyTests.test_reset_and_duplicate_rejected) ... ok
+test_throttle_and_scrape_errors_are_technical (test_study.StudyTests.test_throttle_and_scrape_errors_are_technical) ... ok
+test_zero_reference_and_duplicate_inputs (test_study.StudyTests.test_zero_reference_and_duplicate_inputs) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 9.807s
+
+OK
+COMPLETE: 8 accepted macroblocks / 128 main runs. Analyze before making claims.
+COMPLETE: 8 accepted macroblocks / 128 main runs. Analyze before making claims.
+# Main-study analysis
+
+8 accepted macroblocks; 128 audited runs. 0 protocol/workload cells ineligible for clean comparisons.
+
+Energy is a fixed +12-second padded-batch model estimate, not physically validated energy. Raw immediate values remain in collection evidence. Failures are retained; an affected cell's repetitions are not selectively averaged into clean comparisons.
+
+See analysis.json for pointwise t/whole-block bootstrap intervals, paired JSON ratios, payload/concurrency/interaction contrasts, endpoint sensitivity, optional preference scenarios, Pareto points, CPU dependence, and ranking substitutions. run-level.csv is run-level evidence, not pooled request statistics. No overall winner or physical energy saving is inferred automatically.
+
+All raw exports and requests were re-audited. Technical replacement attempts are listed in analysis.json; excluded attempts remain in the campaign directory. Client calibration remains separate from main repetitions.
+
+{
+  "planned_runs": 128,
+  "blocks": 8,
+  "manifest_sha256": "770990ea730cf66f5a64d1476983e8bf722163a5494ef90e67fe937816116de9",
+  "source_hashes": {
+    "analyze_main.py": "6d47dbe7def21a319480b0fdb81a72e2260ec6b0c2ae72ca61356df3ba2a2382",
+    "collection_main.py": "bdcc798f732615bbfbb657c216d983260f7a0624e5b92a96425217106f109e10",
+    "run_main.py": "7ed03209788461b29c2d5dbcdf0874342d31ddda0a24fcd2e35262ff6879bd92",
+    "study_common.py": "6bae912dc3a2dc26c23ba103b664c7296636040fbeed530c545466492f262120",
+    "validate_run.py": "7a32e1e4e286b81b7428cf06dd2f750555eeffbe8fea5cd7cdc2401fc11931ca"
+  }
+}
